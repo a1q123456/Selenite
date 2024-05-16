@@ -1,6 +1,6 @@
-export module Engine.Core.Threading.Tasks;
+export module Engine.Core.Threading:TaskCompletionSource;
 
-namespace Engine::Core::Threading::Tasks
+namespace Engine::Core::Threading
 {
 
 }

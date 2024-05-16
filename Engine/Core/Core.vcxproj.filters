@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Source.cpp" />
+    <ClCompile Include="Threading\Tasks\TaskCompletionSource\TaskCompletionSource.ixx" />
+    <ClCompile Include="Threading\Tasks\Task\Task.ixx" />
+    <ClCompile Include="Core.ixx" />
+    <ClCompile Include="Threading\Tasks\TaskScheduler\TaskScheduler.ixx" />
+    <ClCompile Include="Threading\Threading.ixx" />
+    <ClCompile Include="Strings\String.ixx" />
+    <ClCompile Include="Strings\Char.ixx" />
   </ItemGroup>
 </Project>

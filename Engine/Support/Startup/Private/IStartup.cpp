@@ -1,57 +1,48 @@
-//
-// Main.cpp
-//
+module;
+#include <Windows.h>
+#include <wrl.h>
+#include <DirectXMath.h>
+#include <tuple>
+module Engine.Support.IStartup;
+import Engine.Support.IntPtr;
 
-#include "pch.h"
-#include "Game.h"
-
-using namespace DirectX;
-
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wcovered-switch-default"
-#pragma clang diagnostic ignored "-Wswitch-enum"
-#endif
-
-#pragma warning(disable : 4061)
-
-#ifdef USING_D3D12_AGILITY_SDK
-extern "C"
+namespace Engine::Support
 {
-    // Used to enable the "Agility SDK" components
-    __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION;
-    __declspec(dllexport) extern const char* D3D12SDKPath = u8".\\D3D12\\";
-}
-#endif
+    IStartup::~IStartup()
+    {
+    }
 
-namespace
-{
-    std::unique_ptr<Game> g_game;
-}
+    IStartup* Bootstrap::startup = nullptr;
 
-LPCWSTR g_szAppName = L"NurbsRenderer";
+    Bootstrap::Bootstrap(IStartup& startup)
+    {
+        Bootstrap::startup = &startup;
+    }
+}
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void ExitGame() noexcept;
 
-// Entry point
-int WINAPI wWinMain2(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
+int WINAPI wWinMain(
+    HINSTANCE hInstance,
+    HINSTANCE hPrevInstance,
+    LPTSTR lpCmdLine,
+    int nShowCmd
+)
 {
+    using namespace Engine::Support;
+    auto startup = Engine::Support::Bootstrap::startup;
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    if (!XMVerifyCPUSupport())
+    if (!DirectX::XMVerifyCPUSupport())
+    {
         return 1;
+    }
 
-#ifdef __MINGW32__
-    if (FAILED(CoInitializeEx(nullptr, COINITBASE_MULTITHREADED)))
-        return 1;
-#else
     Microsoft::WRL::Wrappers::RoInitializeWrapper initialize(RO_INIT_MULTITHREADED);
     if (FAILED(initialize))
         return 1;
-#endif
-
-    g_game = std::make_unique<Game>();
 
     // Register class and create window
     {
@@ -70,29 +61,29 @@ int WINAPI wWinMain2(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
             return 1;
 
         // Create window
-        int w, h;
-        g_game->GetDefaultSize(w, h);
+        int w = 1024, h = 768;
+        startup->GetDefaultSize(w, h);
 
         RECT rc = { 0, 0, static_cast<LONG>(w), static_cast<LONG>(h) };
 
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-        HWND hwnd = CreateWindowExW(0, L"NurbsRendererWindowClass", g_szAppName, WS_OVERLAPPEDWINDOW,
+        HWND hwnd = CreateWindowExW(0, L"NurbsRendererWindowClass", startup->GetAppName(), WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
             nullptr, nullptr, hInstance,
-            g_game.get());
+            startup);
         // TODO: Change to CreateWindowExW(WS_EX_TOPMOST, L"NurbsRendererWindowClass", g_szAppName, WS_POPUP,
         // to default to fullscreen.
 
         if (!hwnd)
             return 1;
 
-        ShowWindow(hwnd, nCmdShow);
+        ShowWindow(hwnd, nShowCmd);
         // TODO: Change nCmdShow to SW_SHOWMAXIMIZED to default to fullscreen.
 
         GetClientRect(hwnd, &rc);
-
-        g_game->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
+        IntPtr windowHandle{ reinterpret_cast<IntPtr::HandleType>(hwnd) };
+        startup->Initialise(windowHandle, rc.right - rc.left, rc.bottom - rc.top);
     }
 
     // Main message loop
@@ -106,25 +97,27 @@ int WINAPI wWinMain2(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         }
         else
         {
-            g_game->Tick();
+            startup->Tick();
         }
     }
 
-    g_game.reset();
+    startup->Teardown();
 
     return static_cast<int>(msg.wParam);
 }
 
+
 // Windows procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    using namespace Engine::Support;
     static bool s_in_sizemove = false;
     static bool s_in_suspend = false;
     static bool s_minimized = false;
     static bool s_fullscreen = false;
     // TODO: Set s_fullscreen to true if defaulting to fullscreen.
 
-    auto game = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+    auto startup = reinterpret_cast<IStartup*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
     switch (message)
     {
@@ -137,9 +130,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_PAINT:
-        if (s_in_sizemove && game)
+        if (s_in_sizemove && startup)
         {
-            game->Tick();
+            startup->Tick();
         }
         else
         {
@@ -155,21 +148,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (!s_minimized)
             {
                 s_minimized = true;
-                if (!s_in_suspend && game)
-                    game->OnSuspending();
+                if (!s_in_suspend && startup)
+                {
+                    //startup->OnSuspending();
+                }
                 s_in_suspend = true;
             }
         }
         else if (s_minimized)
         {
             s_minimized = false;
-            if (s_in_suspend && game)
-                game->OnResuming();
+            if (s_in_suspend && startup)
+            {
+                //startup->OnResuming();
+            }
             s_in_suspend = false;
         }
-        else if (!s_in_sizemove && game)
+        else if (!s_in_sizemove && startup)
         {
-            game->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
+            //startup->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
         }
         break;
 
@@ -179,12 +176,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_EXITSIZEMOVE:
         s_in_sizemove = false;
-        if (game)
+        if (startup)
         {
             RECT rc;
             GetClientRect(hWnd, &rc);
 
-            game->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
+            //startup->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
         }
         break;
 
@@ -198,15 +195,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_ACTIVATEAPP:
-        if (game)
+        if (startup)
         {
             if (wParam)
             {
-                game->OnActivated();
+                //startup->OnActivated();
             }
             else
             {
-                game->OnDeactivated();
+                //startup->OnDeactivated();
             }
         }
         break;
@@ -215,16 +212,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wParam)
         {
         case PBT_APMQUERYSUSPEND:
-            if (!s_in_suspend && game)
-                game->OnSuspending();
+            if (!s_in_suspend && startup)
+            {
+                //startup->OnSuspending();
+            }
             s_in_suspend = true;
             return TRUE;
 
         case PBT_APMRESUMESUSPEND:
             if (!s_minimized)
             {
-                if (s_in_suspend && game)
-                    game->OnResuming();
+                if (s_in_suspend && startup)
+                {
+                    //startup->OnResuming();
+                }
                 s_in_suspend = false;
             }
             return TRUE;
@@ -246,8 +247,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 int width = 800;
                 int height = 600;
-                if (game)
-                    game->GetDefaultSize(width, height);
+                if (startup)
+                    startup->GetDefaultSize(width, height);
 
                 ShowWindow(hWnd, SW_SHOWNORMAL);
 
@@ -281,3 +282,4 @@ void ExitGame() noexcept
 {
     PostQuitMessage(0);
 }
+

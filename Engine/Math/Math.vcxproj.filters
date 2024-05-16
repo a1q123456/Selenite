@@ -5,4 +5,7 @@
       <UniqueIdentifier>{4ca3daca-6d17-4aad-8a9e-86b282d2e2a6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Splines\Fake.ixx" />
+  </ItemGroup>
 </Project>

@@ -11,11 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Core.ixx" />
+    <ClCompile Include="Strings\Char.ixx" />
+    <ClCompile Include="Strings\String.ixx" />
     <ClCompile Include="Threading\Tasks\TaskCompletionSource\TaskCompletionSource.ixx" />
     <ClCompile Include="Threading\Tasks\Task\Task.ixx" />
+    <ClCompile Include="Threading\Threading.ixx" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Threading\Tasks\TaskScheduler\TaskScheduler.ixx" />
+    <ClCompile Include="Threading\Tasks\TaskScheduler\TaskScheduler.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

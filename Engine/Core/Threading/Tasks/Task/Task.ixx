@@ -1,7 +1,8 @@
-export module Engine.Core.Threading.Tasks;
+export module Engine.Core.Threading:Task;
 
-namespace Engine::Core::Threading::Tasks
+namespace Engine::Core::Threading
 {
+    export template<typename TResult>
     class Task
     {
 
