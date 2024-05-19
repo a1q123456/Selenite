@@ -1,10 +1,6 @@
-module;
-
-#include <string>
-#include <string_view>
-
 export module Engine.Core.String;
 import Engine.Core.Char;
+import std;
 
 namespace Engine::Core
 {

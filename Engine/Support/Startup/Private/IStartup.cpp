@@ -2,9 +2,10 @@ module;
 #include <Windows.h>
 #include <wrl.h>
 #include <DirectXMath.h>
-#include <tuple>
 module Engine.Support.IStartup;
-import Engine.Support.IntPtr;
+import Engine.Core.IntPtr;
+import Engine.Graphics.Device;
+import std;
 
 namespace Engine::Support
 {
@@ -13,10 +14,13 @@ namespace Engine::Support
     }
 
     IStartup* Bootstrap::startup = nullptr;
+    Graphics::Device::Context* Bootstrap::context = nullptr;
 
     Bootstrap::Bootstrap(IStartup& startup)
     {
         Bootstrap::startup = &startup;
+        static Graphics::Device::Context context;
+        Bootstrap::context = &context;
     }
 }
 
@@ -31,7 +35,11 @@ int WINAPI wWinMain(
 )
 {
     using namespace Engine::Support;
-    auto startup = Engine::Support::Bootstrap::startup;
+    using namespace Engine::Core;
+    
+    auto startup = Bootstrap::startup;
+    auto context = Bootstrap::context;
+
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -42,7 +50,9 @@ int WINAPI wWinMain(
 
     Microsoft::WRL::Wrappers::RoInitializeWrapper initialize(RO_INIT_MULTITHREADED);
     if (FAILED(initialize))
+    {
         return 1;
+    }
 
     // Register class and create window
     {
@@ -58,10 +68,13 @@ int WINAPI wWinMain(
         wcex.lpszClassName = L"NurbsRendererWindowClass";
         wcex.hIconSm = LoadIconW(wcex.hInstance, L"IDI_ICON");
         if (!RegisterClassExW(&wcex))
+        {
             return 1;
+        }
 
         // Create window
-        int w = 1024, h = 768;
+        int w = 1024;
+        int h = 768;
         startup->GetDefaultSize(w, h);
 
         RECT rc = { 0, 0, static_cast<LONG>(w), static_cast<LONG>(h) };
@@ -83,7 +96,8 @@ int WINAPI wWinMain(
 
         GetClientRect(hwnd, &rc);
         IntPtr windowHandle{ reinterpret_cast<IntPtr::HandleType>(hwnd) };
-        startup->Initialise(windowHandle, rc.right - rc.left, rc.bottom - rc.top);
+        context->Initialise(windowHandle, rc.right - rc.left, rc.bottom - rc.top);
+        context->GetGPUScheduler()->SetRootRenderable(startup->GetStartupScene());
     }
 
     // Main message loop
@@ -97,10 +111,12 @@ int WINAPI wWinMain(
         }
         else
         {
-            startup->Tick();
+            context->GetGPUScheduler()->Tick();
         }
     }
 
+    // Call level->Teardown();
+    context->Teardown();
     startup->Teardown();
 
     return static_cast<int>(msg.wParam);
@@ -132,7 +148,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
         if (s_in_sizemove && startup)
         {
-            startup->Tick();
+            Bootstrap::context->GetGPUScheduler()->Tick();
         }
         else
         {
@@ -150,7 +166,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 s_minimized = true;
                 if (!s_in_suspend && startup)
                 {
-                    //startup->OnSuspending();
+                    // TODO: Call scheduler->OnSuspending();
                 }
                 s_in_suspend = true;
             }
@@ -160,13 +176,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             s_minimized = false;
             if (s_in_suspend && startup)
             {
-                //startup->OnResuming();
+                // TODO: Call scheduler->OnResuming();
             }
             s_in_suspend = false;
         }
         else if (!s_in_sizemove && startup)
         {
-            //startup->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
+            // TODO: scheduler->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
         }
         break;
 
@@ -181,7 +197,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             RECT rc;
             GetClientRect(hWnd, &rc);
 
-            //startup->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
+            // TODO: scheduler->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
         }
         break;
 
@@ -199,11 +215,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             if (wParam)
             {
-                //startup->OnActivated();
+                // TODO: scheduler->OnActivated();
             }
             else
             {
-                //startup->OnDeactivated();
+                // TODO: scheduler->OnDeactivated();
             }
         }
         break;
@@ -214,7 +230,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case PBT_APMQUERYSUSPEND:
             if (!s_in_suspend && startup)
             {
-                //startup->OnSuspending();
+                // TODO: scheduler->OnSuspending();
             }
             s_in_suspend = true;
             return TRUE;
@@ -224,7 +240,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 if (s_in_suspend && startup)
                 {
-                    //startup->OnResuming();
+                    // TODO: scheduler->OnResuming();
                 }
                 s_in_suspend = false;
             }

@@ -8,4 +8,7 @@
   <ItemGroup>
     <ClCompile Include="Splines\Fake.ixx" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>

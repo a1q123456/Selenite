@@ -1,7 +1,8 @@
-export module Engine.Support;
+export module Engine.Support.Private;
+import Engine.Core.Threading;
 
 export namespace Engine::Support
 {
-    // TODO: Wait for the new Visual Studio to release so that we can do this
-    // using namespace Engine::Core::Threading;
+    using namespace Engine::Core::Threading;
+    using namespace Engine::Core;
 }

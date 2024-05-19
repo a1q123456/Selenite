@@ -3,8 +3,7 @@
   <ItemGroup>
     <ClCompile Include="Startup\Startup.cpp" />
     <ClCompile Include="NurbsViewer.ixx" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClCompile Include="Levels\MyRenderable.ixx" />
+    <ClCompile Include="Startup\Startup.ixx" />
   </ItemGroup>
 </Project>

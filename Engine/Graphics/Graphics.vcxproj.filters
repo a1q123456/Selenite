@@ -10,19 +10,29 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="Game.h" />
     <ClInclude Include="StepTimer.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="d3dx12.h">
-      <Filter>Common</Filter>
-    </ClInclude>
+    <ClInclude Include="Device\DirectX\DirectxHeaders.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Device\Context\Context.ixx" />
+    <ClCompile Include="Device\Device.ixx" />
+    <ClCompile Include="Device\DirectX\Utils.ixx" />
+    <ClCompile Include="Device\Context\Private\Context.cpp" />
+    <ClCompile Include="Device\DirectX\D3DX12.ixx" />
+    <ClCompile Include="Device\GPUScheduler\GPUScheduler.ixx" />
+    <ClCompile Include="Device\GPUScheduler\Private\RenderNode.ixx" />
+    <ClCompile Include="Device\GPUScheduler\Private\GPUScheduler.cpp" />
+    <ClCompile Include="Renderable\Renderable.ixx" />
+    <ClCompile Include="Device\Commands\CommandListPool.ixx" />
+    <ClCompile Include="Device\Commands\Private\CommandListPool.cpp" />
+    <ClCompile Include="Renderable\Private\Renderable.cpp" />
+    <ClCompile Include="Device\CommandListStatistics\CommandListStatistics.ixx" />
+    <ClCompile Include="Device\GPUJobQueue\GPUJobQueue.ixx" />
+    <ClCompile Include="Device\GPUJobQueue\Private\GPUJobQueue.cpp" />
+    <ClCompile Include="Device\GPUJobExecutor\GPUJobExecutor.ixx" />
+    <ClCompile Include="Device\GPUJobExecutor\Private\GPUJobExecutor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

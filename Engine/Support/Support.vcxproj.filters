@@ -4,15 +4,8 @@
     <ClCompile Include="Startup\IStartup.ixx" />
     <ClCompile Include="Startup\Private\IStartup.cpp" />
     <ClCompile Include="Private\Private.ixx" />
-    <ClCompile Include="Utilities\Handles\Handle\Handle.ixx" />
-    <ClCompile Include="Utilities\Handles\RawNativeHandle\RawNativeHandle.ixx" />
-    <ClCompile Include="Utilities\Handles\NativeHandleTraits\NativeHandleTraits.ixx" />
-    <ClCompile Include="Utilities\Handles\IntPtr\IntPtr.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Startup\Startup.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

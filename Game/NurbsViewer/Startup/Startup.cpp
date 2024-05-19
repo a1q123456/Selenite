@@ -1,37 +1,43 @@
+module;
+#include "Engine/Support/Startup/Startup.hpp"
+module NurbsViewer.Startup;
 import Engine.Support.IStartup;
 import Engine.Core.Threading;
-import Engine.Support.IntPtr;
-
+import Engine.Core.String;
+import NurbsViewer.MyRenderable;
 import NurbsViewer;
-#include "Engine/Support/Startup/Startup.hpp"
+import std;
+
+namespace Engine::Graphics
+{
+    class Renderable;
+}
 
 using namespace Engine::Core::Threading;
-using namespace Engine::Support;
 
 namespace NurbsViewer
 {
     class Startup : public Engine::Support::IStartup
     {
-        auto Initialise(IntPtr hwnd, int w, int h) -> Task<void> override
+        auto Initialise() -> Task<void> override
         {
             return {};
         }
 
-        auto GetAppName() -> Engine::Core::CZString
+        auto GetAppName() -> Engine::Core::CZString override
         {
             return L"NurbsViewer";
         }
 
-        auto GetDefaultSize(int& w, int& h) -> void
+        auto GetDefaultSize(int& w, int& h) -> void override
         {
             w = 1024;
             h = 768;
         }
 
-        // TODO: Move this to the engine
-        auto Tick() -> Task<void> override
+        auto GetStartupScene() -> std::unique_ptr<Engine::Graphics::Renderable> override
         {
-            return {};
+            return std::make_unique<MyRenderable>();
         }
 
         auto Teardown() -> Task<void> override
