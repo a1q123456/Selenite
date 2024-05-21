@@ -1,5 +1,3 @@
-module;
-#include <cassert>
 module Engine.Graphics.Device.GPUJobQueue;
 
 namespace Engine::Graphics::Device
@@ -14,7 +12,6 @@ namespace Engine::Graphics::Device
         int commandListsCount, 
         Private::RenderNode& node) -> bool
     {
-        assert(commandListsCount < 100);
         if (m_renderNodeQueues[type].IsClosed())
         {
             if (!m_renderNodeQueues[type].CanPop())
@@ -54,6 +51,7 @@ namespace Engine::Graphics::Device
         for (auto type : CommandListPool::COMMAND_QUEUE_TYPES)
         {
             m_renderNodeQueues[type].Close();
+            m_renderNodeQueues[type].Clear();
         }
     }
 

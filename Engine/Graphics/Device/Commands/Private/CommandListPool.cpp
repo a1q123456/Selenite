@@ -24,6 +24,8 @@ namespace Engine::Graphics::Device
                 ThrowIfFailed(m_context->GetDevice()->CreateCommandQueue(
                     &queueDesc,
                     IID_PPV_ARGS(m_commandQueues[i].ReleaseAndGetAddressOf())));
+                auto name = std::format(L"CommandQueue {}", i);
+                m_commandQueues[i]->SetName(name.c_str());
             }
             CreateCommandList(type);
         }

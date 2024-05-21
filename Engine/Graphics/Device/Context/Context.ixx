@@ -39,6 +39,10 @@ namespace Engine::Graphics::Device
         auto GetRTVDescriptorSize() const noexcept { return m_rtvDescriptorSize; }
         auto GetRTVHandle() const noexcept -> CD3DX12_CPU_DESCRIPTOR_HANDLE;
         auto GetDSVHandle() const noexcept -> CD3DX12_CPU_DESCRIPTOR_HANDLE;
+        auto RollRenderTarget() noexcept
+        {
+            m_backBufferIndex = (m_backBufferIndex + 1) % SWAP_BUFFER_COUNT;
+        }
     private:
 
         auto CreateDevice() -> void;
@@ -62,7 +66,7 @@ namespace Engine::Graphics::Device
 
         // Rendering resources
         ComPtr<IDXGISwapChain3> m_swapChain;
-        ComPtr<ID3D12Resource> m_renderTargets[Context::SWAP_BUFFER_COUNT];
+        ComPtr<ID3D12Resource> m_renderTargets[SWAP_BUFFER_COUNT];
         ComPtr<ID3D12Resource> m_depthStencil;
 
         std::unique_ptr<GPUScheduler> m_gpuScheduler;

@@ -24,22 +24,35 @@ namespace Engine::Graphics::Device
         m_gpuScheduler = std::make_unique<GPUScheduler>();
         m_gpuScheduler->Initialise(this);
         CreateResources();
-        
     }
     
     auto Context::Teardown() -> void
     {
-        m_gpuScheduler->Teardown();
-        m_commandListPool->Teardown();
+        if (m_gpuScheduler)
+        {
+            m_gpuScheduler->Teardown();
+        }
+        if (m_commandListPool)
+        {
+            m_commandListPool->Teardown();
+        }
+        m_gpuScheduler.reset();
+        m_commandListPool.reset();
+        m_swapChain.Reset();
+        m_depthStencil.Reset();
         m_rtvDescriptorHeap.Reset();
         m_dsvDescriptorHeap.Reset();
-        m_swapChain.Reset();
+        for (auto& renderTarget : m_renderTargets)
+        {
+            renderTarget.Reset();
+        }
         m_d3dDevice.Reset();
         m_dxgiFactory.Reset();
     }
 
     Context::~Context() noexcept
     {
+        Teardown();
     }
 
     auto Context::GetRTVHandle() const noexcept -> CD3DX12_CPU_DESCRIPTOR_HANDLE
@@ -204,7 +217,6 @@ namespace Engine::Graphics::Device
         // to sleep until the next VSync. This ensures we don't waste any cycles rendering
         // frames that will never be displayed to the screen.
         HRESULT hr = m_swapChain->Present(1, 0);
-        m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
         // If the device was reset we must completely reinitialize the renderer.
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)

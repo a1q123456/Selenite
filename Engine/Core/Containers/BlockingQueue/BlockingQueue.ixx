@@ -1,3 +1,5 @@
+module;
+#include <cassert>
 export module Engine.Core.Containers.BlockingQueue;
 import Engine.Core.Exceptions.OperationiCancelledError;
 import std;
@@ -38,7 +40,8 @@ namespace Engine::Core::Containers
         auto Push(TItem&& item) -> void
             requires(std::movable<TItem>);
         auto Close() -> void;
-        auto IsClosed() -> bool { return m_closed; }
+        auto Clear() -> void;
+        auto IsClosed() const noexcept -> bool { return m_closed; }
     private:
         auto MoveFrom(BlockingQueue&& another) noexcept(noexcept(TItem(std::declval<TItem&&>()))) -> void
             requires(std::movable<TItem>);
@@ -120,6 +123,14 @@ namespace Engine::Core::Containers
         std::unique_lock lock{ m_mutex };
         m_closed = true;
         m_cv.notify_all();
+    }
+
+    template <typename TItem, typename TAllocator>
+    auto BlockingQueue<TItem, TAllocator>::Clear() -> void
+    {
+        std::unique_lock lock{ m_mutex };
+        assert(m_closed);
+        m_list.clear();
     }
 
     template <typename TItem, typename TAllocator>

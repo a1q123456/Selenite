@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Levels\MyRenderable.ixx" />
+    <ClCompile Include="Levels\Private\MyRenderable.cpp" />
     <ClCompile Include="NurbsViewer.ixx" />
     <ClCompile Include="Startup\Startup.cpp" />
     <ClCompile Include="Startup\Startup.ixx" />
@@ -29,6 +30,9 @@
     <ProjectReference Include="..\..\Engine\Support\Support.vcxproj">
       <Project>{f45d1eb6-2403-4353-9926-cd86fddabef6}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -94,5 +98,13 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\packages\directxmath.2024.2.15.1\build\native\directxmath.targets" Condition="Exists('..\..\packages\directxmath.2024.2.15.1\build\native\directxmath.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\packages\directxmath.2024.2.15.1\build\native\directxmath.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\directxmath.2024.2.15.1\build\native\directxmath.targets'))" />
+  </Target>
 </Project>

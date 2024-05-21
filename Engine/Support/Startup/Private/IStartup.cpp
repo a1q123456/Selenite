@@ -97,6 +97,7 @@ int WINAPI wWinMain(
         GetClientRect(hwnd, &rc);
         IntPtr windowHandle{ reinterpret_cast<IntPtr::HandleType>(hwnd) };
         context->Initialise(windowHandle, rc.right - rc.left, rc.bottom - rc.top);
+        startup->Initialise();
         context->GetGPUScheduler()->SetRootRenderable(startup->GetStartupScene());
     }
 

@@ -44,8 +44,9 @@ namespace Engine::Graphics::Device
         auto UpdateStatisticDataWhenFrameFinished() -> void;
         auto SetupContinuations(const Private::RenderNode& node) -> void;
         auto RunCommandContinuations(D3D12_COMMAND_LIST_TYPE queueType) -> void;
+        auto WaitForJobs() -> void;
 
-        static constexpr int MAX_FRAME_DELAY = 0;
+        static constexpr int MAX_FRAME_DELAY = 3;
 
         Context* m_context = nullptr;
         std::unique_ptr<Renderable> m_rootRenderable;
@@ -60,6 +61,7 @@ namespace Engine::Graphics::Device
         GPUJobQueue m_gpuJobQueue;
         GPUJobExecutor m_gpuJobExecutor;
 
+        // TODO: Make it indexed by JobID as well so that we can push more jobs into the queue
         std::array<
             Private::RenderNode,
             CommandListPool::MAX_COMMAND_LIST_TYPE
@@ -69,7 +71,6 @@ namespace Engine::Graphics::Device
             std::vector<GraphicsCommandList::ContinuationType>,
             CommandListPool::MAX_COMMAND_LIST_TYPE
         > m_commandListContinuations;
-            
 
         friend class Renderable;
     };

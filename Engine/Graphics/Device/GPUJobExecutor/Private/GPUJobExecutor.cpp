@@ -49,11 +49,16 @@ namespace Engine::Graphics::Device
                 presentFrame = true;
             }
         }
-        m_context->GetCommandListPool()
-            ->GetCommandQueue(job.queueType)
-            ->ExecuteCommandLists(
-                static_cast<UINT>(commandLists.size()), 
-                CommandListCast(commandLists.data()));
+
+        std::optional<JobID> result = std::nullopt;
+        if (!std::empty(commandLists))
+        {
+            m_context->GetCommandListPool()
+                ->GetCommandQueue(job.queueType)
+                ->ExecuteCommandLists(
+                    static_cast<UINT>(commandLists.size()),
+                    CommandListCast(commandLists.data()));
+        }
         if (presentFrame)
         {
             m_context->PresentFrame();
@@ -61,7 +66,6 @@ namespace Engine::Graphics::Device
         m_context->GetCommandListPool()
             ->GetCommandQueue(job.queueType)
             ->Signal(m_fences[job.queueType].Get(), m_fenceValues[job.queueType]);
-
         return m_fenceValues[job.queueType];
     }
 }
