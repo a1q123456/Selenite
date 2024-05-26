@@ -24,6 +24,7 @@
     <ClCompile Include="Strings\String.ixx" />
     <ClCompile Include="SystemInfo\Private\SystemInfo.cpp" />
     <ClCompile Include="SystemInfo\SystemInfo.ixx" />
+    <ClCompile Include="Threading\Tasks\TaskScheduler\Private\TaskScheduler.cpp" />
     <ClCompile Include="Threading\Tasks\Task\Task.ixx" />
     <ClCompile Include="Threading\Tasks\Tasks.ixx" />
     <ClCompile Include="Threading\ThreadPool\Private\ThreadPool.cpp" />

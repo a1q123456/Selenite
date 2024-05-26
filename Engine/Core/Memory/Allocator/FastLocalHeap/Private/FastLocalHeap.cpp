@@ -78,9 +78,9 @@ namespace Engine::Core::Memory
         auto nextMemoryNodeAddress = reinterpret_cast<std::intptr_t>(nextMemoryNode);
         memoryNode->role = MemoryNodeRole::Used;
 
-        auto newMemoryNodeAddress = memoryNode->GetMemory() + sizeInBytes;
+        auto newMemoryNodeAddress = memoryNode->GetMemory() + static_cast<std::ptrdiff_t>(sizeInBytes);
         newMemoryNodeAddress = GetNextAlignedAddress(newMemoryNodeAddress);
-        if (newMemoryNodeAddress + sizeof(MemoryNode) < nextMemoryNodeAddress)
+        if (static_cast<std::intptr_t>(newMemoryNodeAddress + sizeof(MemoryNode)) < nextMemoryNodeAddress)
         {
             auto freeMemoryNode = std::construct_at(reinterpret_cast<MemoryNode*>(newMemoryNodeAddress));
             freeMemoryNode->rangeNode = memoryNode->rangeNode;

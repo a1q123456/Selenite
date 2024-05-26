@@ -4,8 +4,9 @@ module Engine.Core.Threading.ThreadPool;
 namespace Engine::Core::Threading
 {
     ThreadPool::ThreadPool()
+        : m_workQueue(&m_heap)
     {
-        for (int i = 0; i < std::thread::hardware_concurrency(); i++)
+        for (unsigned int i = 0; i < std::thread::hardware_concurrency(); i++)
         {
             m_workers.emplace_back(std::jthread{ [this] { WorkerThreadEntry(); } });
         }
@@ -24,7 +25,7 @@ namespace Engine::Core::Threading
         }
     }
 
-    auto ThreadPool::SubmitWork(WorkType&& work)
+    auto ThreadPool::SubmitWork(WorkType&& work) -> void
     {
         m_workQueue.Push(std::move(work));
     }

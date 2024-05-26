@@ -19,7 +19,7 @@ namespace Engine::Core::Threading
         auto operator=(const ThreadPool&) -> ThreadPool& = delete;
         auto operator=(ThreadPool&& another) -> ThreadPool& = delete;
 
-        auto SubmitWork(WorkType&& work);
+        auto SubmitWork(WorkType&& work) -> void;
 
     private:
         auto WorkerThreadEntry() noexcept -> void;

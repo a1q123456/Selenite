@@ -12,7 +12,7 @@ namespace Engine::Core::Containers
     class BlockingQueue final
     {
     public:
-        BlockingQueue() = default;
+        BlockingQueue(TAllocator allocator = {});
         BlockingQueue(BlockingQueue&& another) noexcept(noexcept(MoveFrom(another)))
         {
             MoveFrom(std::move(another));
@@ -78,6 +78,13 @@ namespace Engine::Core::Containers
         m_list.pop_front();
         return item;
     }
+
+    template <typename TItem, typename TAllocator>
+    BlockingQueue<TItem, TAllocator>::BlockingQueue(TAllocator allocator)
+        : m_list(allocator)
+    {
+    }
+
     template <typename TItem, typename TAllocator>
     template <typename Rep, typename Period, typename TPrediction>
     auto BlockingQueue<TItem, TAllocator>::WaitFor(TPrediction&& pred,

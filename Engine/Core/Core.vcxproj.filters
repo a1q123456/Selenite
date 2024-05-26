@@ -25,5 +25,6 @@
     <ClCompile Include="Memory\Allocator\FastLocalHeap\Private\FastLocalHeap.cpp" />
     <ClCompile Include="Threading\ThreadPool\ThreadPool.ixx" />
     <ClCompile Include="Threading\ThreadPool\Private\ThreadPool.cpp" />
+    <ClCompile Include="Threading\Tasks\TaskScheduler\Private\TaskScheduler.cpp" />
   </ItemGroup>
 </Project>
