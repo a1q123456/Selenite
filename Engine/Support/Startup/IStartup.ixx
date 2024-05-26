@@ -1,7 +1,7 @@
 export module Engine.Support.IStartup;
 
 import Engine.Core.String;
-import Engine.Core.Threading;
+import Engine.Core.Threading.Tasks;
 import Engine.Graphics.Device;
 import Engine.Support.Private;
 import Engine.Graphics.Renderable;

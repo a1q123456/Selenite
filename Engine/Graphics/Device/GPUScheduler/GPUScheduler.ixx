@@ -1,7 +1,9 @@
 module;
 #include "Engine/Graphics/Device/DirectX/DirectxHeaders.hpp"
 export module Engine.Graphics.Device.GPUScheduler;
-import Engine.Core.Threading;
+import Engine.Core.Threading.Tasks;
+import Engine.Core.Memory.FastLocalAllocator;
+import Engine.Core.Memory.FastLocalHeap;
 import Engine.Graphics.Device.Context;
 import Engine.Graphics.Device.GPUScheduler.RenderNode;
 import Engine.Graphics.Device.CommandListPool;
@@ -22,6 +24,7 @@ namespace Engine::Graphics::Device
     export class GPUScheduler final
     {
     public:
+        GPUScheduler();
         auto Initialise(Context* context) -> void;
         auto Teardown() -> void;
         auto SetRootRenderable(std::unique_ptr<Renderable> renderable) -> void;
@@ -30,9 +33,21 @@ namespace Engine::Graphics::Device
         ~GPUScheduler() noexcept;
 
     private:
+        template <typename T>
+        using Vector = std::vector<T, Core::Memory::FastLocalAllocator<T>>;
+
+        struct JobContext
+        {
+            Vector<GraphicsCommandList::ContinuationType> callbacks;
+            Private::RenderNode node;
+            bool presentsFrame = false;
+
+            JobContext(Core::Memory::FastLocalHeap* heap) : callbacks(heap) {}
+        };
+
         auto CreateEvents() -> void;
-        auto WaitForGpu(D3D12_COMMAND_LIST_TYPE type, std::optional<std::chrono::milliseconds> waitDuration) noexcept -> bool;
         auto WaitForGpu(bool waitAll, std::optional<std::chrono::milliseconds> waitDuration = {}) noexcept -> bool;
+        auto WaitForQueues(std::chrono::milliseconds duration) -> std::array<GPUJobExecutor::JobID, CommandListPool::MAX_COMMAND_LIST_TYPE>;
 
         auto GPUSchedulerThread() noexcept -> void;
         auto GetIdealCommandListsCount(D3D12_COMMAND_LIST_TYPE type) const noexcept -> int;
@@ -40,37 +55,35 @@ namespace Engine::Graphics::Device
         auto PushCommands(GraphicsCommandList&& commandList) -> void;
         auto CheckIfNodePresentsFrame(const Private::RenderNode& node) -> bool;
 
-        auto ReturnCommandListsWhenCommandsFinished(D3D12_COMMAND_LIST_TYPE queueType) -> void;
         auto UpdateStatisticDataWhenFrameFinished() -> void;
-        auto SetupContinuations(const Private::RenderNode& node) -> void;
-        auto RunCommandContinuations(D3D12_COMMAND_LIST_TYPE queueType) -> void;
-        auto WaitForJobs() -> void;
+        auto GetJobFinishStatus(const std::array<GPUJobExecutor::JobID, CommandListPool::MAX_COMMAND_LIST_TYPE>& currentJobIDs)
+            const noexcept -> std::array<bool, CommandListPool::MAX_COMMAND_LIST_TYPE>;
+        auto PopJobContexts(D3D12_COMMAND_LIST_TYPE queueType, GPUJobExecutor::JobID finishedJobID)
+            -> Vector<JobContext>;
+        auto CleanupJobs(Vector<JobContext>&& jobs) -> void;
+        auto SetupJobContext(GPUJobExecutor::JobID jobID, D3D12_COMMAND_LIST_TYPE queueType, Private::RenderNode&& node) -> void;
 
         static constexpr int MAX_FRAME_DELAY = 3;
+        static constexpr int MAX_QUEUED_COMMAND_EXECUTIONS = 3;
+
+        Core::Memory::FastLocalHeap m_heap { 1 };
 
         Context* m_context = nullptr;
         std::unique_ptr<Renderable> m_rootRenderable;
         bool m_gpuIdle = true;
 
-        std::array<Wrappers::Event, CommandListPool::MAX_COMMAND_LIST_TYPE> m_fenceEvent;
+        std::array<Wrappers::Event, CommandListPool::MAX_COMMAND_LIST_TYPE> m_fenceEvents;
 
         std::jthread m_gpuSchedulerThread;
 
-        bool m_currentCommandPresentsFrame = false;
         CommandListStatistics m_statistics;
         GPUJobQueue m_gpuJobQueue;
         GPUJobExecutor m_gpuJobExecutor;
 
-        // TODO: Make it indexed by JobID as well so that we can push more jobs into the queue
         std::array<
-            Private::RenderNode,
+            Vector<std::pair<GPUJobExecutor::JobID, JobContext>>,
             CommandListPool::MAX_COMMAND_LIST_TYPE
-        > m_commandListsToReturn;
-
-        std::array<
-            std::vector<GraphicsCommandList::ContinuationType>,
-            CommandListPool::MAX_COMMAND_LIST_TYPE
-        > m_commandListContinuations;
+        > m_jobContexts;
 
         friend class Renderable;
     };

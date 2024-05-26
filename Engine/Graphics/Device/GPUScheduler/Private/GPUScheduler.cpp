@@ -14,6 +14,15 @@ import std;
 
 namespace Engine::Graphics::Device
 {
+    GPUScheduler::GPUScheduler() : m_jobContexts{
+        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
+        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
+        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
+        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap}
+    }
+    {
+    }
+
     auto GPUScheduler::Initialise(Context* context) -> void
     {
         m_context = context;
@@ -21,7 +30,7 @@ namespace Engine::Graphics::Device
         m_gpuJobExecutor.Initialise(m_context);
         m_gpuSchedulerThread = std::jthread([this] { GPUSchedulerThread(); });
 
-        for (auto& fenceEvent : m_fenceEvent)
+        for (auto& fenceEvent : m_fenceEvents)
         {
             SetEvent(fenceEvent.Get());
         }
@@ -74,7 +83,7 @@ namespace Engine::Graphics::Device
 
     GPUScheduler::~GPUScheduler() noexcept
     {
-        //Teardown();
+        Teardown();
     }
 
     auto GPUScheduler::PushCommands(GraphicsCommandList&& commandList) -> void
@@ -97,8 +106,7 @@ namespace Engine::Graphics::Device
 
     auto GPUScheduler::CreateEvents() -> void
     {
-        WaitForGpu(true);
-        for (auto& fenceEvent : m_fenceEvent)
+        for (auto& fenceEvent : m_fenceEvents)
         {
             fenceEvent.Attach(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
             if (!fenceEvent.IsValid())
@@ -109,23 +117,6 @@ namespace Engine::Graphics::Device
     }
 
     auto GPUScheduler::WaitForGpu(
-        D3D12_COMMAND_LIST_TYPE type, 
-        std::optional<std::chrono::milliseconds> waitDuration) noexcept -> bool
-    {
-        DWORD waitResult = WAIT_TIMEOUT;
-        DWORD milliseconds = INFINITE;
-        if (waitDuration.has_value())
-        {
-            milliseconds = static_cast<DWORD>(waitDuration.value().count());
-        }
-
-        return WAIT_OBJECT_0 == WaitForSingleObjectEx(
-            m_fenceEvent[type].Get(), 
-            milliseconds,
-            FALSE);
-    }
-
-    auto GPUScheduler::WaitForGpu(
         bool waitAll, 
         std::optional<std::chrono::milliseconds> waitDuration) noexcept -> bool
     {
@@ -133,7 +124,8 @@ namespace Engine::Graphics::Device
 
         for (auto type : CommandListPool::COMMAND_QUEUE_TYPES)
         {
-            eventsToWait.emplace_back(m_fenceEvent[type].Get());
+            m_gpuJobExecutor.Signal(type);
+            eventsToWait.emplace_back(m_fenceEvents[type].Get());
         }
 
         DWORD milliseconds = INFINITE;
@@ -157,31 +149,25 @@ namespace Engine::Graphics::Device
         Private::RenderNode node;
         while (true)
         {
-            if (!WaitForGpu(true, 0ms))
+            auto currentJobIDs = WaitForQueues(1ms);
+            auto finishStatus = GetJobFinishStatus(currentJobIDs);
+            if (!std::ranges::any_of(finishStatus, [](bool r) { return r; }))
             {
-                m_gpuIdle = false;
-            }
-            if (!WaitForGpu(false, 1ms))
-            {
-                m_gpuIdle = false;
                 continue;
             }
+
             auto jobExecuted = false;
             bool closedQueues[CommandListPool::MAX_COMMAND_LIST_TYPE]{};
             for (auto type : CommandListPool::COMMAND_QUEUE_TYPES)
             {
                 // The queue is idle and there are enough command lists
-                if (!WaitForGpu(type, 0ms))
+                if (!finishStatus[type])
                 {
                     continue;
                 }
-                ReturnCommandListsWhenCommandsFinished(type);
-                if (m_currentCommandPresentsFrame && type == D3D12_COMMAND_LIST_TYPE_DIRECT)
-                {
-                    m_currentCommandPresentsFrame = false;
-                    UpdateStatisticDataWhenFrameFinished();
-                }
-                RunCommandContinuations(type);
+
+                auto finishedJobContexts = PopJobContexts(type, currentJobIDs[type]);
+                CleanupJobs(std::move(finishedJobContexts));
                 try
                 {
                     if (!m_gpuJobQueue.TryPullJob(type, GetIdealCommandListsCount(type), node))
@@ -195,18 +181,12 @@ namespace Engine::Graphics::Device
                     continue;
                 }
                 jobExecuted = true;
-                m_commandListsToReturn[type] = node;
-                if (type == D3D12_COMMAND_LIST_TYPE_DIRECT)
-                {
-                    m_currentCommandPresentsFrame = CheckIfNodePresentsFrame(node);
-                }
-                SetupContinuations(node);
-                ResetEvent(m_fenceEvent[type].Get());
-                auto jobID = m_gpuJobExecutor.ExecuteGPUJob(std::move(node));
+                ResetEvent(m_fenceEvents[type].Get());
+                auto jobID = m_gpuJobExecutor.ExecuteGPUJob(node);
+                SetupJobContext(jobID, type, std::move(node));
                 ThrowIfFailed(
-                    m_gpuJobExecutor.GetFence(type)->SetEventOnCompletion(jobID, m_fenceEvent[type].Get())
+                    m_gpuJobExecutor.GetFence(type)->SetEventOnCompletion(jobID, m_fenceEvents[type].Get())
                 );
-                m_inFlightJobs[type].emplace_back(jobID);
             }
             if (!jobExecuted)
             {
@@ -221,47 +201,133 @@ namespace Engine::Graphics::Device
         }
     }
 
-    auto GPUScheduler::ReturnCommandListsWhenCommandsFinished(D3D12_COMMAND_LIST_TYPE queueType) -> void
-    {
-        for (auto& commandList : m_commandListsToReturn[queueType].steps)
-        {
-            if (!commandList.IsPresentFrame())
-            {
-                m_context->GetCommandListPool()->Return(std::move(commandList));
-            }
-        }
-    }
-
     auto GPUScheduler::UpdateStatisticDataWhenFrameFinished() -> void
     {
         m_statistics.OnFrameReady();
     }
 
-    auto GPUScheduler::SetupContinuations(const Private::RenderNode& node) -> void
+    auto GPUScheduler::WaitForQueues(std::chrono::milliseconds duration)
+        -> std::array<GPUJobExecutor::JobID, CommandListPool::MAX_COMMAND_LIST_TYPE>
     {
-        m_commandListContinuations[node.queueType].clear();
-        for (auto& commandList : node.steps)
-        {
-            auto continuation = commandList.GetContinuation();
-            if (continuation.has_value())
+        std::array<GPUJobExecutor::JobID, CommandListPool::MAX_COMMAND_LIST_TYPE> result{};
+        std::array<HANDLE, CommandListPool::MAX_COMMAND_LIST_TYPE> eventsToWait{};
+
+        std::ranges::transform(
+            m_fenceEvents,
+            std::begin(eventsToWait), 
+            [](const Wrappers::Event& fenceEvent)
             {
-                m_commandListContinuations[node.queueType].emplace_back(continuation.value());
+                return fenceEvent.Get();
+            });
+
+        DWORD milliseconds = static_cast<DWORD>(duration.count());
+        auto waitResult = WaitForMultipleObjectsEx(
+            static_cast<DWORD>(eventsToWait.size()),
+            eventsToWait.data(),
+            FALSE,
+            milliseconds,
+            FALSE);
+
+        auto success = waitResult >= WAIT_OBJECT_0 && (waitResult < WAIT_OBJECT_0 + eventsToWait.size());
+
+        if (!success)
+        {
+            return result;
+        }
+
+        for (auto queueType : CommandListPool::COMMAND_QUEUE_TYPES)
+        {
+            auto completedValue = m_gpuJobExecutor.GetFence(queueType)->GetCompletedValue();
+
+            result[queueType] = completedValue;
+        }
+        return result;
+    }
+
+    auto GPUScheduler::GetJobFinishStatus(
+        const std::array<GPUJobExecutor::JobID, CommandListPool::MAX_COMMAND_LIST_TYPE>& currentJobIDs)
+            const noexcept -> std::array<bool, CommandListPool::MAX_COMMAND_LIST_TYPE>
+    {
+        std::array<bool, CommandListPool::MAX_COMMAND_LIST_TYPE> result{};
+        for (auto queueType : CommandListPool::COMMAND_QUEUE_TYPES)
+        {
+            auto completedValue = m_gpuJobExecutor.GetFence(queueType)->GetCompletedValue();
+            auto latestValue = m_gpuJobExecutor.GetCurrentJobID(queueType);
+
+            if (latestValue - completedValue <= MAX_QUEUED_COMMAND_EXECUTIONS)
+            {
+                result[queueType] = true;
             }
+        }
+        return result;
+    }
+
+    auto GPUScheduler::PopJobContexts(
+        D3D12_COMMAND_LIST_TYPE queueType,
+        GPUJobExecutor::JobID finishedJobID) -> Vector<JobContext>
+    {
+        Vector<JobContext> result(& m_heap);
+        for (auto& [jobID, jobContext] : m_jobContexts[queueType])
+        {
+            if (finishedJobID - jobID <= MAX_QUEUED_COMMAND_EXECUTIONS)
+            {
+                result.emplace_back(std::move(jobContext));
+            }
+        }
+        std::erase_if(m_jobContexts[queueType], [=](auto& pair)
+            {
+                return finishedJobID - pair.first <= MAX_QUEUED_COMMAND_EXECUTIONS;
+            });
+        return result;
+    }
+
+    auto GPUScheduler::CleanupJobs(Vector<JobContext>&& jobs) -> void
+    {
+        for (auto& job : jobs)
+        {
+            for (auto& commandList : job.node.steps)
+            {
+                if (!commandList.IsPresentFrame())
+                {
+                    m_context->GetCommandListPool()->Return(std::move(commandList));
+                }
+            }
+            if (job.presentsFrame)
+            {
+                UpdateStatisticDataWhenFrameFinished();
+            }
+
+            Core::Threading::Task<void>::Start([continuations=std::move(job.callbacks)]
+                {
+                    for (auto [userData, func] : continuations)
+                    {
+                        func(userData);
+                    }
+                });
         }
     }
 
-    auto GPUScheduler::RunCommandContinuations(D3D12_COMMAND_LIST_TYPE queueType) -> void
+    auto GPUScheduler::SetupJobContext(
+        GPUJobExecutor::JobID jobID,
+        D3D12_COMMAND_LIST_TYPE queueType, 
+        Private::RenderNode&& node) -> void
     {
-        auto continuations = m_commandListContinuations[queueType];
-        m_commandListContinuations[queueType].clear();
-
-        Core::Threading::Task<void>::Start([continuations]
+        JobContext jobContext{ &m_heap };
+        if (queueType == D3D12_COMMAND_LIST_TYPE_DIRECT)
+        {
+            jobContext.presentsFrame = CheckIfNodePresentsFrame(node);
+        }
+        for (auto& step : node.steps)
+        {
+            auto& continuation = step.GetContinuation();
+            if (continuation.has_value())
             {
-                for (auto [userData, func] : continuations)
-                {
-                    func(userData);
-                }
-            });
+                jobContext.callbacks.emplace_back(continuation.value());
+            }
+        }
+        jobContext.node = std::move(node);
+
+        m_jobContexts[queueType].emplace_back(std::make_pair(jobID, std::move(jobContext)));
     }
 
     auto GPUScheduler::GetIdealCommandListsCount(D3D12_COMMAND_LIST_TYPE type) const noexcept -> int

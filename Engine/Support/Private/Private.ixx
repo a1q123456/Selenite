@@ -1,5 +1,5 @@
 export module Engine.Support.Private;
-import Engine.Core.Threading;
+import Engine.Core.Threading.Tasks;
 
 export namespace Engine::Support
 {

@@ -31,7 +31,7 @@ namespace Engine::Graphics::Device
         }
     }
 
-    auto GPUJobExecutor::ExecuteGPUJob(Private::RenderNode&& job) -> JobID
+    auto GPUJobExecutor::ExecuteGPUJob(Private::RenderNode& job) -> JobID
     {
         m_fenceValues[job.queueType]++;
         std::vector<ID3D12GraphicsCommandList*> commandLists;
@@ -67,6 +67,15 @@ namespace Engine::Graphics::Device
             ->GetCommandQueue(job.queueType)
             ->Signal(m_fences[job.queueType].Get(), m_fenceValues[job.queueType]);
         return m_fenceValues[job.queueType];
+    }
+
+    auto GPUJobExecutor::Signal(D3D12_COMMAND_LIST_TYPE type) noexcept -> JobID
+    {
+        m_fenceValues[type]++;
+        m_context->GetCommandListPool()
+            ->GetCommandQueue(type)
+            ->Signal(m_fences[type].Get(), m_fenceValues[type]);
+        return m_fenceValues[type];
     }
 }
 

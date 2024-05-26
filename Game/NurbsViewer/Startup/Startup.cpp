@@ -1,19 +1,19 @@
 module;
 #include "Engine/Support/Startup/Startup.hpp"
+#include <Windows.h>
 module NurbsViewer.Startup;
 import Engine.Support.IStartup;
-import Engine.Core.Threading;
+import Engine.Core.Threading.Tasks;
 import Engine.Core.String;
+import Engine.Graphics.Renderable;
 import NurbsViewer.MyRenderable;
 import NurbsViewer;
 import std;
 
-namespace Engine::Graphics
-{
-    class Renderable;
-}
+import Engine.Core.Memory.FastLocalHeap;
 
 using namespace Engine::Core::Threading;
+using namespace Engine::Core;
 
 namespace NurbsViewer
 {

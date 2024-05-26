@@ -1,26 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Threading\Tasks\TaskCompletionSource\TaskCompletionSource.ixx" />
     <ClCompile Include="Threading\Tasks\Task\Task.ixx" />
     <ClCompile Include="Core.ixx" />
     <ClCompile Include="Threading\Tasks\TaskScheduler\TaskScheduler.ixx" />
-    <ClCompile Include="Threading\Threading.ixx" />
+    <ClCompile Include="Threading\Tasks\Tasks.ixx" />
     <ClCompile Include="Strings\String.ixx" />
     <ClCompile Include="Strings\Char.ixx" />
     <ClCompile Include="Logging\Logger.ixx" />
     <ClCompile Include="Logging\Private\Logger.cpp" />
     <ClCompile Include="Utilities\Handles\Handle\Handle.ixx" />
-    <ClCompile Include="Utilities\Handles\IntPtr\Private\IntPtr.cpp" />
-    <ClCompile Include="Utilities\Handles\IntPtr\IntPtr.ixx" />
     <ClCompile Include="Utilities\Handles\NativeHandleTraits\NativeHandleTraits.ixx" />
     <ClCompile Include="Utilities\Handles\RawNativeHandle\Private\RawNativeHandle.cpp" />
     <ClCompile Include="Utilities\Handles\RawNativeHandle\RawNativeHandle.ixx" />
     <ClCompile Include="Containers\BlockingQueue\BlockingQueue.ixx" />
     <ClCompile Include="Utilities\Misc\Overloaded.ixx" />
     <ClCompile Include="Exceptions\OperationiCancelledError.ixx" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="BuildProps\BuildConfig.props" />
+    <ClCompile Include="Memory\Allocator\FastLocalAllocator\FastLocalAllocator.ixx" />
+    <ClCompile Include="Containers\DoublyLinkedNode\DoublyLinkedNode.ixx" />
+    <ClCompile Include="SystemInfo\SystemInfo.ixx" />
+    <ClCompile Include="SystemInfo\Private\SystemInfo.cpp" />
+    <ClCompile Include="Utilities\Handles\NativeHandle\NativeHandle.ixx" />
+    <ClCompile Include="Memory\Allocator\FastLocalHeap\FastLocalHeap.ixx" />
+    <ClCompile Include="Memory\Allocator\FastLocalHeap\Private\FastLocalHeap.cpp" />
+    <ClCompile Include="Threading\ThreadPool\ThreadPool.ixx" />
+    <ClCompile Include="Threading\ThreadPool\Private\ThreadPool.cpp" />
   </ItemGroup>
 </Project>

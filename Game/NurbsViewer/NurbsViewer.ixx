@@ -1,6 +1,6 @@
 export module NurbsViewer;
 
-import Engine.Core.Threading;
+import Engine.Core.Threading.Tasks;
 
 export namespace NurbsViewer
 {

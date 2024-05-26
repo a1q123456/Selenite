@@ -2,7 +2,7 @@ module;
 #include "Engine/Graphics/Device/DirectX/DirectxHeaders.hpp"
 export module Engine.Graphics.Device.Context;
 import Engine.Graphics.Device.D3DX12;
-import Engine.Core.IntPtr;
+import Engine.Core.NativeHandle;
 import std;
 
 using namespace Engine::Core;
@@ -19,7 +19,7 @@ namespace Engine::Graphics::Device
         static constexpr std::size_t SWAP_BUFFER_COUNT = 3;
 
         Context() = default;
-        auto Initialise(IntPtr hwnd, int width, int height) -> void;
+        auto Initialise(NativeHandle hwnd, int width, int height) -> void;
         auto Teardown() -> void;
         virtual ~Context() noexcept;
 
@@ -51,7 +51,7 @@ namespace Engine::Graphics::Device
 
 
         // Application state
-        IntPtr m_window{};
+        NativeHandle m_window{};
         int m_outputWidth = 1024;
         int m_outputHeight = 768;
         UINT m_backBufferIndex{};

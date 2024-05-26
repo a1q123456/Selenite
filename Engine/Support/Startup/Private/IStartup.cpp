@@ -3,7 +3,7 @@ module;
 #include <wrl.h>
 #include <DirectXMath.h>
 module Engine.Support.IStartup;
-import Engine.Core.IntPtr;
+import Engine.Core.NativeHandle;
 import Engine.Graphics.Device;
 import std;
 
@@ -95,7 +95,7 @@ int WINAPI wWinMain(
         // TODO: Change nCmdShow to SW_SHOWMAXIMIZED to default to fullscreen.
 
         GetClientRect(hwnd, &rc);
-        IntPtr windowHandle{ reinterpret_cast<IntPtr::HandleType>(hwnd) };
+        NativeHandle windowHandle{ hwnd };
         context->Initialise(windowHandle, rc.right - rc.left, rc.bottom - rc.top);
         startup->Initialise();
         context->GetGPUScheduler()->SetRootRenderable(startup->GetStartupScene());

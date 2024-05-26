@@ -6,12 +6,11 @@ import Engine.Graphics.Device.Utils;
 import Engine.Graphics.Device.CommandListPool;
 import Engine.Graphics.Device.GPUScheduler;
 import Engine.Graphics.Renderable;
-import Engine.Core.IntPtr;
 
 using namespace Microsoft::WRL;
 namespace Engine::Graphics::Device
 {
-    auto Context::Initialise(IntPtr hwnd, int width, int height) -> void
+    auto Context::Initialise(NativeHandle hwnd, int width, int height) -> void
     {
         m_featureLevel = D3D_FEATURE_LEVEL_12_0;
         m_window = hwnd;

@@ -1,4 +1,4 @@
-export module Engine.Core.Threading:Task;
+export module Engine.Core.Threading.Tasks:Task;
 import std;
 
 namespace Engine::Core::Threading
@@ -8,6 +8,8 @@ namespace Engine::Core::Threading
     {
     public:
         static auto Start(std::function<TResult()>&& entry) -> Task;
+
+
     };
 
     template<typename TResult>

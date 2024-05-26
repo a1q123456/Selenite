@@ -1,4 +1,4 @@
-export module Engine.Core.Threading:TaskScheduler;
+export module Engine.Core.Threading.Tasks:TaskScheduler;
 
 namespace Engine::Core::Threading
 {

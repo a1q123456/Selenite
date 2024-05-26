@@ -55,7 +55,7 @@ namespace Engine::Graphics::Device
             m_continuation = continuation;
         }
 
-        auto GetContinuation() const noexcept
+        auto GetContinuation() const noexcept -> auto&
         {
             return m_continuation;
         }
