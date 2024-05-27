@@ -4,6 +4,10 @@ import Engine.Graphics.Device.GPUScheduler;
 
 namespace Engine::Graphics
 {
+    auto Renderable::Initialise() -> void
+    {
+    }
+
     auto Renderable::PushCommandList(Device::GraphicsCommandList&& commandList) const noexcept -> void
     {
         m_context->GetGPUScheduler()
@@ -59,6 +63,11 @@ namespace Engine::Graphics
         return m_context->GetOutputHeight();
     }
 
+    auto Renderable::GetDevice() const noexcept -> ComPtr<ID3D12Device>
+    {
+        return m_context->GetDevice();
+    }
+
     auto Renderable::CreateCommandList(D3D12_COMMAND_LIST_TYPE type) const noexcept -> Device::GraphicsCommandList
     {
         return m_context->GetCommandListPool()->Rent(type);
@@ -67,5 +76,6 @@ namespace Engine::Graphics
     auto Renderable::SetContext(Device::Context* context) -> void
     {
         m_context = context;
+        Initialise();
     }
 }

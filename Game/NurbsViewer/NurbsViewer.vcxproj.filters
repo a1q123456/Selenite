@@ -9,5 +9,31 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Contents\RayTracer\RayTracer.hlsl" />
+    <None Include="Contents\Math\Polynomial\Polynomial.Decl.h" />
+    <None Include="Contents\Rationaliser\Rationaliser.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Contents\Ray\Ray.Decl.h" />
+    <ClInclude Include="Contents\Plane\Plane.h" />
+    <ClInclude Include="Contents\Ray\IntersectingPlanesRay.h" />
+    <ClInclude Include="Contents\Math\Polynomial\Polynomial.h" />
+    <ClInclude Include="Contents\Math\RationalFunction3D\RationalFunction3D.Decl.h" />
+    <ClInclude Include="Contents\Math\RationalFunction3D\RationalFunction3D.h" />
+    <ClInclude Include="Contents\Ray\IntersectingPlanesRay.Decl.h" />
+    <ClInclude Include="Contents\Ray\Ray.h" />
+    <ClInclude Include="Contents\Math\NurbsPatch\NurbsPatch.Decl.h" />
+    <ClInclude Include="Contents\Math\NurbsPatch\NurbsPatch.h" />
+    <ClInclude Include="Contents\Constants\NurbsTracingConfiguration.h" />
+    <ClInclude Include="Contents\Constants\CameraData.h" />
+    <ClInclude Include="Contents\Constants\RayTracerConstants.h" />
+    <ClInclude Include="Contents\Math\Polynomial3D\Polynomial3D.h" />
+    <ClInclude Include="Contents\Math\Polynomial3D\Polynomial3D.Decl.h" />
+    <ClInclude Include="Contents\Math\BasisFunction\BasisFunction.h" />
+    <ClInclude Include="Contents\Math\BasisFunction\BasisFunction.Decl.h" />
+    <ClInclude Include="Contents\Constants\RationaliserConstants.h" />
+    <ClInclude Include="Contents\Math\BasisFunctionDerivative\BasisFunctionDerivative.Decl.h" />
+    <ClInclude Include="Contents\Math\BasisFunctionDerivative\BasisFunctionDerivative.h" />
+    <ClInclude Include="Contents\Math\NurbsPatchIndex\NurbsPatchIndex.h" />
   </ItemGroup>
 </Project>

@@ -19,6 +19,7 @@ namespace Engine::Graphics
     export class Renderable
     {
     public:
+        virtual auto Initialise() -> void;
         virtual auto Render(float time) -> void = 0;
         virtual ~Renderable() = default;
 
@@ -34,6 +35,7 @@ namespace Engine::Graphics
         auto GetDSVHandle() const noexcept -> CD3DX12_CPU_DESCRIPTOR_HANDLE;
         auto GetOutputWidth() const noexcept -> int;
         auto GetOutputHeight() const noexcept -> int;
+        auto GetDevice() const noexcept -> ComPtr<ID3D12Device>;
 
     private:
         auto CreateCommandList(D3D12_COMMAND_LIST_TYPE type) const noexcept -> Device::GraphicsCommandList;

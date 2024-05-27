@@ -1,9 +1,31 @@
 module;
 #include "Engine/Graphics/Device/DirectX/DirectxHeaders.hpp"
 module NurbsViewer.MyRenderable;
+import std;
+using namespace Microsoft::WRL;
 
 namespace NurbsViewer
 {
+    void MyRenderable::Initialise()
+    {
+        auto shaderPath = std::filesystem::current_path() / "Output" / "Shaders" / "RayTracer.dxil";
+        std::fstream shaderFileStream{ shaderPath, std::ios::in | std::ios::binary };
+
+        std::vector<std::uint8_t> buffer(std::istreambuf_iterator(shaderFileStream), {});
+
+        D3D12_COMPUTE_PIPELINE_STATE_DESC pipelineStateDesc{};
+        pipelineStateDesc.CS.BytecodeLength = buffer.size();
+        pipelineStateDesc.CS.pShaderBytecode = buffer.data();
+
+        GetDevice()->CreateRootSignature(
+            0, 
+            buffer.data(), 
+            buffer.size(), 
+            IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf()));
+
+        GetDevice()->CreateComputePipelineState(&pipelineStateDesc, IID_PPV_ARGS(m_pipelineState.ReleaseAndGetAddressOf()));
+    }
+
     auto MyRenderable::Render(float time) -> void
     {
         auto commandList = CreateDirectCommandList();
@@ -13,6 +35,7 @@ namespace NurbsViewer
             GetCurrentRTV().Get(),
             D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
         commandList->ResourceBarrier(1, &barrierToRT);
+        commandList->SetPipelineState(m_pipelineState.Get());
 
         auto rtvHandle = GetRTVHandle();
         auto dsvHandle = GetDSVHandle();
