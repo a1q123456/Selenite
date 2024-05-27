@@ -15,6 +15,8 @@ namespace NurbsViewer
         auto Initialise() -> void override;
         auto Render(float time) -> void override;
     private:
+        auto LoadNurbs();
+
         ComPtr<ID3D12PipelineState> m_pipelineState;
         ComPtr<ID3D12RootSignature> m_rootSignature;
     };

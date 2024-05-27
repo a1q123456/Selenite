@@ -1,5 +1,6 @@
 module;
 #include "Engine/Graphics/Device/DirectX/DirectxHeaders.hpp"
+#include <DirectXMath.h>
 module NurbsViewer.MyRenderable;
 import std;
 using namespace Microsoft::WRL;
@@ -85,5 +86,10 @@ namespace NurbsViewer
         commandList->ResourceBarrier(1, &barrierToPresent);
         commandList->Close();
         PushCommandList(std::move(commandList));
+    }
+
+    auto MyRenderable::LoadNurbs()
+    {
+
     }
 }
