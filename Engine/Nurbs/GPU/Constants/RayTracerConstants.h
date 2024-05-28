@@ -1,7 +1,7 @@
 #pragma once
 #include "CameraData.h"
 #include "NurbsTracingConfiguration.h"
-#include "Game/NurbsViewer/Contents/Math/NurbsPatch/NurbsPatch.h"
+#include "Engine/Nurbs/GPU/Math/NurbsPatch/NurbsPatch.h"
 
 ConstantBuffer<Engine::Rendering::CameraData> cameraData : register(b0);
 ConstantBuffer<Engine::Rendering::NurbsTracingConfiguration> nurbsTracingConfiguration : register(b1);

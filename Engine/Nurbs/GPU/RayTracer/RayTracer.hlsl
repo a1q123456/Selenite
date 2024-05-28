@@ -1,8 +1,8 @@
-#include "Game/NurbsViewer/Contents/Constants/CameraData.h"
-#include "Game/NurbsViewer/Contents/Constants/NurbsTracingConfiguration.h"
-#include "Game/NurbsViewer/Contents/Constants/RayTracerConstants.h"
+#include "Engine/Nurbs/GPU/Constants/CameraData.h"
+#include "Engine/Nurbs/GPU/Constants/NurbsTracingConfiguration.h"
+#include "Engine/Nurbs/GPU/Constants/RayTracerConstants.h"
 
-#include "Game/NurbsViewer/Contents/Ray/Ray.h"
+#include "Engine/Nurbs/GPU/Ray/Ray.h"
 
 [RootSignature(NurbsRaytracerRS)]
 [numthreads(8, 8, 1)]

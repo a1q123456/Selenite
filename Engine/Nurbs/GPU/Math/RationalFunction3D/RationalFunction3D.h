@@ -1,5 +1,5 @@
 #pragma once
-#include "Game/NurbsViewer/Contents/Math/Polynomial3D/Polynomial3D.h"
+#include "Engine/Nurbs/GPU/Math/Polynomial3D/Polynomial3D.h"
 
 namespace Engine
 {

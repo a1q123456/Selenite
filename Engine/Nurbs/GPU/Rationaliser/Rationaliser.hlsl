@@ -1,5 +1,5 @@
-#include "Game/NurbsViewer/Contents/Math/Polynomial/Polynomial.h"
-#include "Game/NurbsViewer/Contents/Constants/RationaliserConstants.h"
+#include "Engine/Nurbs/GPU/Math/Polynomial/Polynomial.h"
+#include "Engine/Nurbs/GPU/Constants/RationaliserConstants.h"
 
 [RootSignature(NurbsRationaliserRS)]
 [numthreads(32, 1, 1)]
@@ -84,7 +84,6 @@ void main(uint3 tid : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
 
             nurbsPatches[index].partialDerivativeV.denominator.coefficients += derivativeVDen[i][j];
 
-            nurbsPatches[index].initialGuess = patchIndex.uv;
         }
     }
 }

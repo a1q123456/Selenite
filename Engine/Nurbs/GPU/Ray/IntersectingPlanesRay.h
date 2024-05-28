@@ -1,8 +1,8 @@
 #pragma once
-#include "Game/NurbsViewer/Contents/Math/NurbsPatch/NurbsPatch.h"
-#include "Game/NurbsViewer/Contents/Math/RationalFunction3D/RationalFunction3D.h"
-#include "Game/NurbsViewer/Contents/Constants/RayTracerConstants.h"
-#include "Game/NurbsViewer/Contents/Plane/Plane.h"
+#include "Engine/Nurbs/GPU/Math/NurbsPatch/NurbsPatch.h"
+#include "Engine/Nurbs/GPU/Math/RationalFunction3D/RationalFunction3D.h"
+#include "Engine/Nurbs/GPU/Constants/RayTracerConstants.h"
+#include "Engine/Nurbs/GPU/Plane/Plane.h"
 
 float2 RandomVector()
 {
@@ -89,7 +89,7 @@ namespace Engine
             bool TraceRay(Math::NurbsPatch nurbsPatch, float errorTolerance, int maxIteration, out float2 uv, out float3 position, out float3 normal)
 
             {
-                float2 currentGuess = nurbsPatch.initialGuess;
+                float2 currentGuess = lerp(nurbsPatch.maxUV, nurbsPatch.minUV, 0.5);
                 float3 Suv = nurbsPatch.nurbsFunction.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
 
                 float3 su;
@@ -121,6 +121,16 @@ namespace Engine
                     }
                 }
 
+                if (any(currentGuess > nurbsPatch.maxUV) || any(currentGuess < nurbsPatch.minUV))
+                {
+                    return false;
+                }
+
+                if (Suv.x - O.x / D.x < 0)
+                {
+                    return false;
+                }
+
                 uv = currentGuess;
                 position = Suv;
                 normal = cross(su, sv);
@@ -130,6 +140,8 @@ namespace Engine
 
             Plane plane1;
             Plane plane2;
+            float3 O;
+            float3 D;
         };
     }
 }

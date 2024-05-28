@@ -5,5 +5,5 @@ import std;
 
 namespace Engine::Nurbs
 {
-    auto GetBasisFunctions(int k, std::span<float> knots) noexcept -> std::array<DirectX::XMMATRIX, 4>;
+    export auto GetBasisFunctions(int k, std::span<float> knots) noexcept -> std::array<DirectX::XMMATRIX, 4>;
 }

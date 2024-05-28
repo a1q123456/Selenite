@@ -32,45 +32,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Contents\Math\Polynomial\Polynomial.Decl.h" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Contents\RayTracer\RayTracer.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Contents\Constants\CameraData.h" />
-    <ClInclude Include="Contents\Constants\RationaliserConstants.h" />
-    <ClInclude Include="Contents\Constants\RayTracerConstants.h" />
-    <ClInclude Include="Contents\Constants\NurbsTracingConfiguration.h" />
-    <ClInclude Include="Contents\Math\BasisFunctionDerivative\BasisFunctionDerivative.Decl.h" />
-    <ClInclude Include="Contents\Math\BasisFunctionDerivative\BasisFunctionDerivative.h" />
-    <ClInclude Include="Contents\Math\BasisFunction\BasisFunction.Decl.h" />
-    <ClInclude Include="Contents\Math\BasisFunction\BasisFunction.h" />
-    <ClInclude Include="Contents\Math\NurbsPatchIndex\NurbsPatchIndex.h" />
-    <ClInclude Include="Contents\Math\NurbsPatch\NurbsPatch.Decl.h" />
-    <ClInclude Include="Contents\Math\NurbsPatch\NurbsPatch.h" />
-    <ClInclude Include="Contents\Math\Polynomial3D\Polynomial3D.Decl.h" />
-    <ClInclude Include="Contents\Math\Polynomial3D\Polynomial3D.h" />
-    <ClInclude Include="Contents\Math\Polynomial\Polynomial.h" />
-    <ClInclude Include="Contents\Math\RationalFunction3D\RationalFunction3D.Decl.h" />
-    <ClInclude Include="Contents\Math\RationalFunction3D\RationalFunction3D.h" />
-    <ClInclude Include="Contents\Plane\Plane.h" />
-    <ClInclude Include="Contents\Ray\IntersectingPlanesRay.Decl.h" />
-    <ClInclude Include="Contents\Ray\IntersectingPlanesRay.h" />
-    <ClInclude Include="Contents\Ray\Ray.Decl.h" />
-    <ClInclude Include="Contents\Ray\Ray.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Contents\Rationaliser\Rationaliser.hlsl">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

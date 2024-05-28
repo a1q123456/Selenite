@@ -1,8 +1,8 @@
 #pragma once
-#include "Game/NurbsViewer/Contents/Math/NurbsPatch/NurbsPatch.h"
-#include "Game/NurbsViewer/Contents/Math/BasisFunction/BasisFunction.h"
-#include "Game/NurbsViewer/Contents/Math/BasisFunctionDerivative/BasisFunctionDerivative.h"
-#include "Game/NurbsViewer/Contents/Math/NurbsPatchIndex/NurbsPatchIndex.h"
+#include "Engine/Nurbs/GPU/Math/NurbsPatch/NurbsPatch.h"
+#include "Engine/Nurbs/GPU/Math/BasisFunction/BasisFunction.h"
+#include "Engine/Nurbs/GPU/Math/BasisFunctionDerivative/BasisFunctionDerivative.h"
+#include "Engine/Nurbs/GPU/Math/NurbsPatchIndex/NurbsPatchIndex.h"
 
 StructuredBuffer<Engine::Math::BasisFunction> basisFunctions : register(t0);
 StructuredBuffer<Engine::Math::BasisFunctionDerivative> basisFunctionDerivatives : register(t1);

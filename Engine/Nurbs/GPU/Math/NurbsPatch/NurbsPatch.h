@@ -1,5 +1,5 @@
 #pragma once
-#include "Game/NurbsViewer/Contents/Math/RationalFunction3D/RationalFunction3D.h"
+#include "Engine/Nurbs/GPU/Math/RationalFunction3D/RationalFunction3D.h"
 
 namespace Engine
 {
@@ -11,7 +11,8 @@ namespace Engine
             RationalFunction3D partialDerivativeU;
             RationalFunction3D partialDerivativeV;
 
-            float2 initialGuess;
+            float2 minUV;
+            float2 maxUV;
         };
     }
 

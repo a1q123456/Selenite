@@ -1,6 +1,6 @@
 #pragma once
 #include "IntersectingPlanesRay.h"
-#include "Game/NurbsViewer/Contents/Plane/Plane.h"
+#include "Engine/Nurbs/GPU/Plane/Plane.h"
 
 
 namespace Engine
@@ -42,6 +42,8 @@ namespace Engine
 
                 result.plane1 = p1;
                 result.plane2 = p2;
+                result.O = O;
+                result.D = D;
                 return result;
             }
 

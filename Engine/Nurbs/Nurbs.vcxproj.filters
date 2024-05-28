@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CPU\Polynomial\Polynomial.ixx" />
+    <ClCompile Include="CPU\Polynomial\Private\Polynomial.cpp" />
+    <ClCompile Include="CPU\BasisFunction\BasisFunction.ixx" />
+    <ClCompile Include="CPU\BasisFunction\Private\BasisFunction.cpp" />
+    <ClCompile Include="CPU\RationalFunction\RationalFunction.ixx" />
+    <ClCompile Include="CPU\SurfacePatch\SurfacePatch.ixx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GPU\Math\RationalFunction3D\RationalFunction3D.h" />
+    <ClInclude Include="GPU\Constants\CameraData.h" />
+    <ClInclude Include="GPU\Constants\NurbsTracingConfiguration.h" />
+    <ClInclude Include="GPU\Constants\RationaliserConstants.h" />
+    <ClInclude Include="GPU\Constants\RayTracerConstants.h" />
+    <ClInclude Include="GPU\Math\BasisFunction\BasisFunction.Decl.h" />
+    <ClInclude Include="GPU\Math\BasisFunction\BasisFunction.h" />
+    <ClInclude Include="GPU\Math\BasisFunctionDerivative\BasisFunctionDerivative.Decl.h" />
+    <ClInclude Include="GPU\Math\BasisFunctionDerivative\BasisFunctionDerivative.h" />
+    <ClInclude Include="GPU\Math\NurbsPatch\NurbsPatch.Decl.h" />
+    <ClInclude Include="GPU\Math\NurbsPatch\NurbsPatch.h" />
+    <ClInclude Include="GPU\Math\NurbsPatchIndex\NurbsPatchIndex.h" />
+    <ClInclude Include="GPU\Math\Polynomial\Polynomial.Decl.h" />
+    <ClInclude Include="GPU\Math\Polynomial\Polynomial.h" />
+    <ClInclude Include="GPU\Math\Polynomial3D\Polynomial3D.Decl.h" />
+    <ClInclude Include="GPU\Math\Polynomial3D\Polynomial3D.h" />
+    <ClInclude Include="GPU\Math\RationalFunction3D\RationalFunction3D.Decl.h" />
+    <ClInclude Include="GPU\Plane\Plane.h" />
+    <ClInclude Include="GPU\Ray\IntersectingPlanesRay.Decl.h" />
+    <ClInclude Include="GPU\Ray\IntersectingPlanesRay.h" />
+    <ClInclude Include="GPU\Ray\Ray.Decl.h" />
+    <ClInclude Include="GPU\Ray\Ray.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GPU\RayTracer\RayTracer.hlsl" />
+    <None Include="GPU\Rationaliser\Rationaliser.hlsl" />
+  </ItemGroup>
+</Project>
