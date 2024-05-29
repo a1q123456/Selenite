@@ -52,13 +52,13 @@ namespace Engine::Nurbs
         // Compute derivative with respect to u
         for (int i = 1; i <= degree; i++)
         {
-            derivative_u.r[i - 1] = DirectX::XMVectorScale(A.r[i], i);
+            derivative_u.r[i - 1] = DirectX::XMVectorScale(A.r[i], static_cast<float>(i));
         }
 
         // Compute derivative with respect to v
         for (int j = 1; j <= degree; j++)
         {
-            derivative_v.r[j - 1] = DirectX::XMVectorScale(AT.r[j], j);
+            derivative_v.r[j - 1] = DirectX::XMVectorScale(AT.r[j], static_cast<float>(j));
         }
 
         derivative_v = XMMatrixTranspose(derivative_v);

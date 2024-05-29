@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="CPU\BasisFunction\Private\BasisFunction.cpp" />
     <ClCompile Include="CPU\BasisFunction\BasisFunction.ixx" />
+    <ClCompile Include="CPU\NurbsCalculations\NurbsCalculations.ixx" />
     <ClCompile Include="CPU\Polynomial\Polynomial.ixx" />
     <ClCompile Include="CPU\Polynomial\Private\Polynomial.cpp" />
     <ClCompile Include="CPU\RationalFunction\RationalFunction.ixx" />

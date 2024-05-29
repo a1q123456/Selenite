@@ -27,6 +27,9 @@
     <ProjectReference Include="..\..\Engine\Math\Math.vcxproj">
       <Project>{6c2c9d35-f3f4-4a7a-a42e-df068ae36ea9}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\Engine\Nurbs\Nurbs.vcxproj">
+      <Project>{b2239894-d3fc-4eeb-884f-06aa1aae34f7}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Engine\Support\Support.vcxproj">
       <Project>{f45d1eb6-2403-4353-9926-cd86fddabef6}</Project>
     </ProjectReference>

@@ -13,6 +13,7 @@
     <ClCompile Include="CPU\BasisFunction\Private\BasisFunction.cpp" />
     <ClCompile Include="CPU\RationalFunction\RationalFunction.ixx" />
     <ClCompile Include="CPU\SurfacePatch\SurfacePatch.ixx" />
+    <ClCompile Include="CPU\NurbsCalculations\NurbsCalculations.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GPU\Math\RationalFunction3D\RationalFunction3D.h" />

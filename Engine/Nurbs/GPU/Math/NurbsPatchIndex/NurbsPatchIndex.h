@@ -7,7 +7,8 @@ namespace Engine
         struct NurbsPatchIndex
         {
             uint2 index;
-            float2 uv;
+            float2 minUV;
+            float2 maxUV;
         };
     }
 }

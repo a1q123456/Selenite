@@ -57,5 +57,35 @@ namespace Engine::Core::Memory
     {
         return !(lhs == rhs);
     }
+
+    export template <typename T>
+    using FastHeapVector = std::vector<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapList = std::list<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapSet = std::set<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapMultiSet = std::multiset<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapUnorderedSet = std::unordered_set<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapUnorderedMultiSet = std::unordered_multiset<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapMap = std::map<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapUnorderedMap = std::unordered_map<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapMultiMap = std::multimap<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
+    using FastHeapUnorderedMultiMap = std::unordered_multimap<T, FastLocalAllocator<T>>;
 }
 
