@@ -10,7 +10,7 @@ namespace
 namespace Engine::Core::Threading
 {
 
-    auto TaskScheduler::QueueContinuation(std::coroutine_handle<> continuation) noexcept
+    auto TaskScheduler::QueueContinuation(std::coroutine_handle<> continuation) noexcept -> void
     {
         m_threadPool.SubmitWork([=] { continuation(); });
     }
@@ -25,7 +25,7 @@ namespace Engine::Core::Threading
         return &globalScheduler;
     }
 
-    auto TaskScheduler::SetTaskSchedulerForCurrentThread(TaskScheduler* taskScheduler) noexcept
+    auto TaskScheduler::SetTaskSchedulerForCurrentThread(TaskScheduler* taskScheduler) noexcept -> void
     {
         threadLocalScheduler = taskScheduler;
     }

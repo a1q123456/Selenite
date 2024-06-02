@@ -20,6 +20,13 @@ namespace Engine
                 }
                 return result;
             }
+
+            void Initialise()
+            {
+                numerator.Initialise();
+                denominator.Initialise();
+                isRational = false;
+            }
         };
     }
 

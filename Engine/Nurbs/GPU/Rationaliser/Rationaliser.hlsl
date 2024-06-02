@@ -8,16 +8,14 @@ void main(uint3 tid : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
     const int degreeU = 3;
     const int degreeV = 3;
 
+    const uint2 degreeUV = uint2(degreeU, degreeV);
+
     uint3 groupSize = uint3(32, 1, 1);
     uint3 coordinate = groupSize * groupID + tid;
 
     uint index = coordinate.x;
 
-    uint structsCount = 0;
-    uint stride = 0;
-    basisFunctions.GetDimensions(structsCount, stride);
-
-    if (index >= structsCount)
+    if (index >= rationaliserData.patchesCount)
     {
         return;
     }
@@ -28,6 +26,7 @@ void main(uint3 tid : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
 
     uint2 uvIndex = patchIndex.index;
 
+    nurbsPatches[index].Initialise();
     nurbsPatches[index].minUV = patchIndex.minUV;
     nurbsPatches[index].maxUV = patchIndex.maxUV;
 
@@ -41,13 +40,13 @@ void main(uint3 tid : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
     bool isRational = false;
     float previousW = 0;
     bool isFirst = true;
-    for (int i = degreeU; i >= 0; i--)
+    for (int i = 0; i <= degreeU; i++)
     {
-        for (int j = degreeV; j >= 0; j--)
+        for (int j = 0; j <= degreeV; j++)
         {
-            uint2 controlPointsIndex = uint2(uvIndex.x - i, uvIndex.y - j);
+            uint2 controlPointsIndex = uvIndex - degreeUV + uint2(i, j);
 
-            float4 controlPoint = controlPoints[controlPointsIndex];
+            float4 controlPoint = controlPoints[controlPointsIndex.x * rationaliserData.controlPointsStride + controlPointsIndex.y];
 
             if (isFirst)
             {
@@ -59,24 +58,23 @@ void main(uint3 tid : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
                 isRational = true;
             }
 
-            weighted[degreeU - i][degreeV - j] = patchBasisFunctions.basisFunctions[degreeU - i][degreeV - j].coefficients * controlPoint.w;
+            weighted[i][j] = patchBasisFunctions.basisFunctions[i][j].coefficients * controlPoint.w;
 
-            polynomial[degreeU - i][degreeV - j][0] = weighted[degreeU - i][degreeV - j] * controlPoint.x;
-            polynomial[degreeU - i][degreeV - j][1] = weighted[degreeU - i][degreeV - j] * controlPoint.y;
-            polynomial[degreeU - i][degreeV - j][2] = weighted[degreeU - i][degreeV - j] * controlPoint.z;
+            polynomial[i][j][0] = weighted[i][j] * controlPoint.x;
+            polynomial[i][j][1] = weighted[i][j] * controlPoint.y;
+            polynomial[i][j][2] = weighted[i][j] * controlPoint.z;
 
-            derivativeUDen[degreeU - i][degreeV - j] = patchDerivatives.derivativeU[degreeU - i][degreeV - j].coefficients * controlPoint.w;
-            derivativeUNum[degreeU - i][degreeV - j][0] = derivativeUDen[degreeU - i][degreeV - j] * controlPoint.x;
-            derivativeUNum[degreeU - i][degreeV - j][1] = derivativeUDen[degreeU - i][degreeV - j] * controlPoint.y;
-            derivativeUNum[degreeU - i][degreeV - j][2] = derivativeUDen[degreeU - i][degreeV - j] * controlPoint.z;
+            derivativeUDen[i][j] = patchDerivatives.derivativeU[i][j].coefficients * controlPoint.w;
+            derivativeUNum[i][j][0] = derivativeUDen[i][j] * controlPoint.x;
+            derivativeUNum[i][j][1] = derivativeUDen[i][j] * controlPoint.y;
+            derivativeUNum[i][j][2] = derivativeUDen[i][j] * controlPoint.z;
 
-            derivativeVDen[degreeU - i][degreeV - j] = patchDerivatives.derivativeV[degreeU - i][degreeV - j].coefficients * controlPoint.w;
-            derivativeVNum[degreeU - i][degreeV - j][0] = derivativeVDen[degreeU - i][degreeV - j] * controlPoint.x;
-            derivativeVNum[degreeU - i][degreeV - j][1] = derivativeVDen[degreeU - i][degreeV - j] * controlPoint.y;
-            derivativeVNum[degreeU - i][degreeV - j][2] = derivativeVDen[degreeU - i][degreeV - j] * controlPoint.z;
+            derivativeVDen[i][j] = patchDerivatives.derivativeV[i][j].coefficients * controlPoint.w;
+            derivativeVNum[i][j][0] = derivativeVDen[i][j] * controlPoint.x;
+            derivativeVNum[i][j][1] = derivativeVDen[i][j] * controlPoint.y;
+            derivativeVNum[i][j][2] = derivativeVDen[i][j] * controlPoint.z;
         }
     }
-
     for (int i = 0; i <= degreeU; i++)
     {
         for (int j = 0; j <= degreeV; j++)
@@ -99,7 +97,6 @@ void main(uint3 tid : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
                 nurbsPatches[index].partialDerivativeU.denominator.coefficients += derivativeUDen[i][j];
                 nurbsPatches[index].partialDerivativeV.denominator.coefficients += derivativeVDen[i][j];
             }
-
         }
     }
 

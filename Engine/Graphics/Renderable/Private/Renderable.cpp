@@ -4,8 +4,9 @@ import Engine.Graphics.Device.GPUScheduler;
 
 namespace Engine::Graphics
 {
-    auto Renderable::Initialise() -> void
+    auto Renderable::Initialise() -> Task<void>
     {
+        return {};
     }
 
     auto Renderable::PushCommandList(Device::GraphicsCommandList&& commandList) const noexcept -> void
@@ -73,9 +74,9 @@ namespace Engine::Graphics
         return m_context->GetCommandListPool()->Rent(type);
     }
 
-    auto Renderable::SetContext(Device::Context* context) -> void
+    Task<void> Renderable::SetContext(Device::Context* context)
     {
         m_context = context;
-        Initialise();
+        return Initialise();
     }
 }

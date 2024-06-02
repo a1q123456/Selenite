@@ -4,9 +4,11 @@ export module Engine.Graphics.Renderable;
 import Engine.Graphics.Device.GPUScheduler.RenderNode;
 import Engine.Graphics.Device.CommandListPool;
 import Engine.Graphics.Device.D3DX12;
+import Engine.Core.Threading.Tasks;
 import std;
 
 using namespace Microsoft::WRL;
+using namespace Engine::Core::Threading;
 
 namespace Engine::Graphics
 {
@@ -19,7 +21,7 @@ namespace Engine::Graphics
     export class Renderable
     {
     public:
-        virtual auto Initialise() -> void;
+        virtual Task<void> Initialise();
         virtual auto Render(float time) -> void = 0;
         virtual ~Renderable() = default;
 
@@ -39,7 +41,7 @@ namespace Engine::Graphics
 
     private:
         auto CreateCommandList(D3D12_COMMAND_LIST_TYPE type) const noexcept -> Device::GraphicsCommandList;
-        auto SetContext(Device::Context* scheduler) -> void;
+        Task<void> SetContext(Device::Context* scheduler);
 
         friend class Device::GPUScheduler;
 

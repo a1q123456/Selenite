@@ -9,7 +9,7 @@ namespace Engine::Core::Threading
     export class ThreadPool
     {
     public:
-        using WorkType = std::function<void()>;
+        using WorkType = std::move_only_function<void()>;
 
         ThreadPool();
         ~ThreadPool() noexcept;

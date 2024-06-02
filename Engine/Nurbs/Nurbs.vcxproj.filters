@@ -14,6 +14,9 @@
     <ClCompile Include="CPU\RationalFunction\RationalFunction.ixx" />
     <ClCompile Include="CPU\SurfacePatch\SurfacePatch.ixx" />
     <ClCompile Include="CPU\NurbsCalculations\NurbsCalculations.ixx" />
+    <ClCompile Include="CPU\GPUInterop\RationaliserData\RationaliserData.ixx" />
+    <ClCompile Include="CPU\GPUInterop\CameraData\CameraData.ixx" />
+    <ClCompile Include="CPU\GPUInterop\NurbsTracingConfiguration\NurbsTracingConfiguration.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GPU\Math\RationalFunction3D\RationalFunction3D.h" />
@@ -38,6 +41,7 @@
     <ClInclude Include="GPU\Ray\IntersectingPlanesRay.h" />
     <ClInclude Include="GPU\Ray\Ray.Decl.h" />
     <ClInclude Include="GPU\Ray\Ray.h" />
+    <ClInclude Include="GPU\Constants\RationaliserData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GPU\RayTracer\RayTracer.hlsl" />

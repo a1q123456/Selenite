@@ -10,16 +10,19 @@ import Engine.Graphics.Device.CommandListPool;
 import Engine.Graphics.Renderable;
 import Engine.Core.Containers.BlockingQueue;
 import Engine.Core.Utilities.Overloaded;
+import Engine.Core.Threading.Tasks;
 import std;
 
 namespace Engine::Graphics::Device
 {
-    GPUScheduler::GPUScheduler() : m_jobContexts{
-        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
-        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
-        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
-        Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap}
-    }
+    GPUScheduler::GPUScheduler() :
+        m_jobContexts{
+            Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
+            Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
+            Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
+            Vector<std::pair<GPUJobExecutor::JobID, JobContext>>{&m_heap},
+        },
+        m_delayedCleanups(&m_heap)
     {
     }
 
@@ -47,7 +50,7 @@ namespace Engine::Graphics::Device
         m_gpuJobExecutor.Teardown();
     }
 
-    auto GPUScheduler::SetRootRenderable(std::unique_ptr<Renderable> renderable) -> void
+    Core::Threading::Task<void> GPUScheduler::SetRootRenderable(std::unique_ptr<Renderable> renderable)
     {
         m_gpuJobQueue.CloseAll();
         try
@@ -59,7 +62,7 @@ namespace Engine::Graphics::Device
         assert(m_gpuIdle);
         m_rootRenderable = std::move(renderable);
         m_gpuSchedulerThread = std::jthread([this] { GPUSchedulerThread(); });
-        m_rootRenderable->SetContext(m_context);
+        return m_rootRenderable->SetContext(m_context);
     }
 
     auto GPUScheduler::Tick() -> void
@@ -274,7 +277,7 @@ namespace Engine::Graphics::Device
                 result.emplace_back(std::move(jobContext));
             }
         }
-        std::erase_if(m_jobContexts[queueType], [=](auto& pair)
+        std::erase_if(m_jobContexts[queueType], [&](auto& pair)
             {
                 return finishedJobID - pair.first <= MAX_QUEUED_COMMAND_EXECUTIONS;
             });
@@ -283,6 +286,12 @@ namespace Engine::Graphics::Device
 
     auto GPUScheduler::CleanupJobs(Vector<JobContext>&& jobs) -> void
     {
+        while (m_unblockedCleanupIndex != 0)
+        {
+            m_delayedCleanups.pop_front();
+
+            --m_unblockedCleanupIndex;
+        }
         for (auto& job : jobs)
         {
             for (auto& commandList : job.node.steps)
@@ -291,19 +300,35 @@ namespace Engine::Graphics::Device
                 {
                     m_context->GetCommandListPool()->Return(std::move(commandList));
                 }
+                commandList.ReleaseCommandList();
             }
             if (job.presentsFrame)
             {
                 UpdateStatisticDataWhenFrameFinished();
             }
 
-            Core::Threading::Task<void>::Start([continuations=std::move(job.callbacks)]
+            if (!std::empty(job.callbacks))
+            {
+                auto begin = m_delayedCleanups.insert(
+                    std::end(m_delayedCleanups),
+                    std::make_move_iterator(std::begin(job.callbacks)),
+                    std::make_move_iterator(std::end(job.callbacks)));
+
+                auto end = std::end(m_delayedCleanups);
+
+                // TODO: Make the tread pool lock-free
+                Core::Threading::TaskScheduler::GetCurrentScheduler()->GetThreadPool().SubmitWork([begin, end, this]
                 {
-                    for (auto [userData, func] : continuations)
+                    for (auto iter = begin; iter != end; )
                     {
-                        func(userData);
+                        auto& func = *iter;
+                        func();
+
+                        ++iter;
+                        ++m_unblockedCleanupIndex;
                     }
                 });
+            }
         }
     }
 
@@ -322,7 +347,9 @@ namespace Engine::Graphics::Device
             auto& continuation = step.GetContinuation();
             if (continuation.has_value())
             {
-                jobContext.callbacks.emplace_back(continuation.value());
+                jobContext.callbacks.emplace_back(
+                    std::move(continuation.value())
+                );
             }
         }
         jobContext.node = std::move(node);

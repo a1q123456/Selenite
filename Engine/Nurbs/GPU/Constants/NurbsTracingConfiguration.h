@@ -9,6 +9,7 @@ namespace Engine
             int maxIteration;
             float errorThreshold;
             uint seed;
+            uint patchesCount;
         };
     }
 }

@@ -98,7 +98,7 @@ int WINAPI wWinMain(
         NativeHandle windowHandle{ hwnd };
         context->Initialise(windowHandle, rc.right - rc.left, rc.bottom - rc.top);
         startup->Initialise();
-        context->GetGPUScheduler()->SetRootRenderable(startup->GetStartupScene());
+        context->GetGPUScheduler()->SetRootRenderable(startup->GetStartupScene()).Wait();
     }
 
     // Main message loop

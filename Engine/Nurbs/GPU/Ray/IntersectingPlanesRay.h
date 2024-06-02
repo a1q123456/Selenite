@@ -34,26 +34,6 @@ namespace Engine
                 return J[otherRow][otherColumn];
             }
 
-            float2x2 AdjugateMatrix(float2x2 J)
-            {
-                float2x2 cofactors = float2x2(0, 0, 0, 0);
-
-                for (int i = 0; i < 2; i++)
-                {
-                    for (int j = 0; j < 2; j++)
-                    {
-                        float minor = PickElement(J, i, j);
-
-                        bool sign = (i + j) % 2 == 0;
-
-                        minor = sign ? minor : -minor;
-                        cofactors[i][j] = minor;
-                    }
-                }
-
-                return transpose(cofactors);
-            }
-
             float2x2 InverseJacobianMatrix(
                 Math::RationalFunction3D Su,
                 Math::RationalFunction3D Sv,
@@ -82,12 +62,10 @@ namespace Engine
                     }
                 }
 
-                float invDet = 1 / det;
-                return invDet * AdjugateMatrix(J);
+                return float2x2(J._m11, -J._m01, -J._m10, J._m00) / det;
             }
 
             bool TraceRay(Math::NurbsPatch nurbsPatch, float errorTolerance, int maxIteration, out float2 uv, out float3 position, out float3 normal)
-
             {
                 float2 currentGuess = lerp(nurbsPatch.maxUV, nurbsPatch.minUV, 0.5);
                 float3 Suv = nurbsPatch.nurbsFunction.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
@@ -110,6 +88,7 @@ namespace Engine
                     distance = DistanceToRoot(Suv);
                     float newError = dot(distance, distance);
 
+                    break;
                     if (newError > error)
                     {
                         return false;

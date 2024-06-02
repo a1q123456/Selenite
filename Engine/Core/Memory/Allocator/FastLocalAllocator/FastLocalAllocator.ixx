@@ -65,6 +65,9 @@ namespace Engine::Core::Memory
     using FastHeapList = std::list<T, FastLocalAllocator<T>>;
 
     export template <typename T>
+    using FastHeapDeque = std::deque<T, FastLocalAllocator<T>>;
+
+    export template <typename T>
     using FastHeapSet = std::set<T, FastLocalAllocator<T>>;
 
     export template <typename T>

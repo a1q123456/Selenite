@@ -58,7 +58,7 @@ namespace Engine::Core::Containers
         std::unique_lock lock{ m_mutex };
         if (!std::ranges::empty(m_list))
         {
-            auto item = m_list.front();
+            auto item = std::move(m_list.front());
             m_list.pop_front();
             return item;
         }
@@ -74,7 +74,7 @@ namespace Engine::Core::Containers
         {
             throw Core::Exceptions::OperationCancelledError{};
         }
-        auto item = m_list.front();
+        auto item = std::move(m_list.front());
         m_list.pop_front();
         return item;
     }

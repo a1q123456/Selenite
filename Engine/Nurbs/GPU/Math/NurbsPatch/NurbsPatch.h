@@ -13,6 +13,16 @@ namespace Engine
 
             float2 minUV;
             float2 maxUV;
+
+            void Initialise()
+            {
+                nurbsFunction.Initialise();
+                partialDerivativeU.Initialise();
+                partialDerivativeV.Initialise();
+
+                minUV = float2(0, 0);
+                maxUV = float2(0, 0);
+            }
         };
     }
 

@@ -27,7 +27,7 @@ namespace Engine::Graphics::Device
         GPUScheduler();
         auto Initialise(Context* context) -> void;
         auto Teardown() -> void;
-        auto SetRootRenderable(std::unique_ptr<Renderable> renderable) -> void;
+        Core::Threading::Task<void> SetRootRenderable(std::unique_ptr<Renderable> renderable);
 
         auto Tick() -> void;
         ~GPUScheduler() noexcept;
@@ -41,6 +41,24 @@ namespace Engine::Graphics::Device
             Vector<GraphicsCommandList::ContinuationType> callbacks;
             Private::RenderNode node;
             bool presentsFrame = false;
+
+            JobContext() = delete;
+            JobContext(const JobContext&) = delete;
+            JobContext(JobContext&& another) noexcept
+                : callbacks(std::move(another.callbacks))
+            {
+                node = std::move(another.node);
+                presentsFrame = another.presentsFrame;
+            }
+
+            auto operator=(const JobContext&) ->JobContext & = delete;
+            auto operator=(JobContext&& another) noexcept -> JobContext&
+            {
+                callbacks = std::move(callbacks);
+                node = std::move(another.node);
+                presentsFrame = another.presentsFrame;
+                return *this;
+            }
 
             JobContext(Core::Memory::FastLocalHeap* heap) : callbacks(heap) {}
         };
@@ -84,6 +102,9 @@ namespace Engine::Graphics::Device
             Vector<std::pair<GPUJobExecutor::JobID, JobContext>>,
             CommandListPool::MAX_COMMAND_LIST_TYPE
         > m_jobContexts;
+
+        Core::Memory::FastHeapList<GraphicsCommandList::ContinuationType> m_delayedCleanups;
+        std::atomic_size_t m_unblockedCleanupIndex;
 
         friend class Renderable;
     };

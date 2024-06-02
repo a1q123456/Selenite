@@ -6,6 +6,29 @@ import Engine.Graphics.Device.Utils;
 
 namespace Engine::Graphics::Device
 {
+    GraphicsCommandList::GraphicsCommandList(GraphicsCommandList&& another) noexcept
+    {
+        MoveFrom(std::move(another));
+    }
+
+    GraphicsCommandList& GraphicsCommandList::operator=(GraphicsCommandList&& another) noexcept
+    {
+        MoveFrom(std::move(another));
+        return *this;
+    }
+
+    auto GraphicsCommandList::MoveFrom(GraphicsCommandList&& another) noexcept -> void
+    {
+        m_continuation = std::move(another.m_continuation);
+        m_type = another.m_type;
+        m_allocator = std::move(another.m_allocator);
+        m_commandList = std::move(another.m_commandList);
+
+        another.m_continuation = std::nullopt;
+        another.m_allocator = nullptr;
+        another.m_commandList = nullptr;
+    }
+
     auto CommandListPool::Initialise(Context* context) -> void
     {
         std::lock_guard lock{ m_mutex };
@@ -39,7 +62,7 @@ namespace Engine::Graphics::Device
         {
             CreateCommandList(type);
         }
-        auto commandList = m_pool[type].back();
+        auto commandList = std::move(m_pool[type].back());
         m_pool[type].pop_back();
         commandList.GetAllocator()->Reset();
         commandList->Reset(commandList.GetAllocator().Get(), nullptr);
@@ -50,7 +73,7 @@ namespace Engine::Graphics::Device
         GraphicsCommandList&& commandList) -> void
     {
         std::lock_guard lock{ m_mutex };
-        commandList.SetContinuation({});
+        commandList.ClearContinuation();
         m_pool[commandList.Type()].emplace_back(std::move(commandList));
     }
 
@@ -88,8 +111,9 @@ namespace Engine::Graphics::Device
                 nullptr, IID_PPV_ARGS(commandList.ReleaseAndGetAddressOf()))
             );
             ThrowIfFailed(commandList->Close());
+            GraphicsCommandList graphicsCommandList{ type, std::move(commandAllocator), std::move(commandList) };
             m_pool[type].emplace_back(
-                GraphicsCommandList{ type, std::move(commandAllocator), std::move(commandList) }
+                std::move(graphicsCommandList)
             );
         }
     }

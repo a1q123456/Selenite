@@ -55,7 +55,7 @@ namespace Engine::Nurbs
             {
                 auto Nv = GetBasisFunctions(v, V);
 
-                DirectX::XMMATRIX weighted{};
+                DirectX::XMMATRIX denominator{};
                 DirectX::XMMATRIX polynomialX{};
                 DirectX::XMMATRIX polynomialY{};
                 DirectX::XMMATRIX polynomialZ{};
@@ -73,6 +73,7 @@ namespace Engine::Nurbs
                     {
                         auto nVIndex = j - (v - degree);
 
+                        DirectX::XMMATRIX weighted{};
                         DirectX::XMFLOAT4X4 NvMatrix{};
                         XMStoreFloat4x4(&NvMatrix, XMMatrixTranspose(Nv[Nv.size() - nVIndex - 1]));
 
@@ -82,7 +83,7 @@ namespace Engine::Nurbs
                         auto Puv = P[std::array{ i, j }];
 
                         auto w = Puv.w;
-                        weighted += w * NMatrix;
+                        weighted = w * NMatrix;
                         if (!previousW.has_value())
                         {
                             previousW = w;
@@ -95,6 +96,8 @@ namespace Engine::Nurbs
                         polynomialX += Puv.x * weighted;
                         polynomialY += Puv.y * weighted;
                         polynomialZ += Puv.z * weighted;
+
+                        denominator += weighted;
                     }
                 }
 
@@ -103,7 +106,7 @@ namespace Engine::Nurbs
                     polynomialX,
                     polynomialY,
                     polynomialZ,
-                    weighted,
+                    denominator,
                     isRational
                 };
                 DirectX::XMFLOAT2 minUV{ U[u], V[v] };
@@ -190,7 +193,6 @@ namespace Engine::Nurbs
                         auto& vDerivative = patchDerivatives.second[nUIndex][nVIndex];
 
                         std::tie(uDerivative, vDerivative) = DifferentiatePolynomial(NMatrix);
-
                     }
                 }
 

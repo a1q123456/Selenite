@@ -21,16 +21,20 @@
   <ItemGroup>
     <ClCompile Include="CPU\BasisFunction\Private\BasisFunction.cpp" />
     <ClCompile Include="CPU\BasisFunction\BasisFunction.ixx" />
+    <ClCompile Include="CPU\GPUInterop\CameraData\CameraData.ixx" />
+    <ClCompile Include="CPU\GPUInterop\NurbsTracingConfiguration\NurbsTracingConfiguration.ixx" />
     <ClCompile Include="CPU\NurbsCalculations\NurbsCalculations.ixx" />
     <ClCompile Include="CPU\Polynomial\Polynomial.ixx" />
     <ClCompile Include="CPU\Polynomial\Private\Polynomial.cpp" />
     <ClCompile Include="CPU\RationalFunction\RationalFunction.ixx" />
+    <ClCompile Include="CPU\GPUInterop\RationaliserData\RationaliserData.ixx" />
     <ClCompile Include="CPU\SurfacePatch\SurfacePatch.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GPU\Constants\CameraData.h" />
     <ClInclude Include="GPU\Constants\NurbsTracingConfiguration.h" />
     <ClInclude Include="GPU\Constants\RationaliserConstants.h" />
+    <ClInclude Include="GPU\Constants\RationaliserData.h" />
     <ClInclude Include="GPU\Constants\RayTracerConstants.h" />
     <ClInclude Include="GPU\Math\BasisFunctionDerivative\BasisFunctionDerivative.Decl.h" />
     <ClInclude Include="GPU\Math\BasisFunctionDerivative\BasisFunctionDerivative.h" />

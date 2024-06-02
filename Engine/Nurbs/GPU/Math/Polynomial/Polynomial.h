@@ -28,6 +28,16 @@ namespace Engine
 
                 return result;
             }
+
+            void Initialise()
+            {
+                coefficients = float4x4(
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0
+                );
+            }
         };
     }
 }

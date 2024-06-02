@@ -9,12 +9,18 @@ namespace Engine::Core::Threading
     public:
         static auto GetCurrentScheduler() noexcept -> TaskScheduler*;
 
-        static auto SetTaskSchedulerForCurrentThread(TaskScheduler* taskScheduler) noexcept;
+        static auto SetTaskSchedulerForCurrentThread(TaskScheduler* taskScheduler) noexcept -> void;
 
-        auto QueueContinuation(std::coroutine_handle<> continuation) noexcept;
+        auto QueueContinuation(std::coroutine_handle<> continuation) noexcept -> void;
+
+
+        auto GetThreadPool() noexcept -> ThreadPool&
+        {
+            return m_threadPool;
+        }
+
 
     private:
-
         ThreadPool m_threadPool;
     };
 

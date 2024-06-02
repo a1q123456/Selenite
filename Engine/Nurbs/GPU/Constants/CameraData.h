@@ -8,7 +8,8 @@ namespace Engine
         {
             float4x4 iProjMatrix;
             float4 origin;
-            uint4 outputSize;
+            uint2 outputSize;
+            uint2 pad;
         };
     }
 }

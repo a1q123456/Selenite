@@ -49,7 +49,96 @@ namespace NurbsViewer
         return { pipelineState, rootSignature };
     }
 
-    void MyRenderable::Initialise()
+    auto MyRenderable::AllocateWritibleTexture(
+        int width, int height, DXGI_FORMAT format
+    ) noexcept -> ComPtr<ID3D12Resource>
+    {
+        ComPtr<ID3D12Resource> resource;
+        auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+        auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+            format,
+            width,
+            height,
+            1,
+            0,
+            1,
+            0,
+            D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
+        );
+        ThrowIfFailed(GetDevice()->CreateCommittedResource(
+            &heapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &resourceDesc,
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+            nullptr,
+            IID_PPV_ARGS(resource.ReleaseAndGetAddressOf())));
+
+        return resource;
+    }
+
+    template <typename T>
+    auto MyRenderable::AllocateStructuredBuffer(
+        const Memory::FastHeapVector<T>& arr,
+        D3D12_HEAP_TYPE heapType,
+        D3D12_RESOURCE_FLAGS resourceFlags,
+        D3D12_RESOURCE_STATES defaultState
+    ) noexcept -> ComPtr<ID3D12Resource>
+    {
+        ComPtr<ID3D12Resource> resource;
+        std::span resourceView{ arr };
+        auto heapProperties = CD3DX12_HEAP_PROPERTIES(heapType);
+        auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(resourceView.size_bytes(), resourceFlags);
+        ThrowIfFailed(GetDevice()->CreateCommittedResource(
+            &heapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &resourceDesc,
+            defaultState,
+            nullptr,
+            IID_PPV_ARGS(resource.ReleaseAndGetAddressOf())));
+
+        if ((heapType & D3D12_HEAP_TYPE_UPLOAD) != 0)
+        {
+            CD3DX12_RANGE range{ 0, 0 };
+            void* data = nullptr;
+            ThrowIfFailed(resource->Map(0, &range, &data));
+            std::memcpy(data, resourceView.data(), resourceView.size_bytes());
+            resource->Unmap(0, nullptr);
+        }
+        return resource;
+    }
+
+    auto MyRenderable::CreateOutputTextureUAV(
+        const ComPtr<ID3D12Resource>& buffer,
+        DXGI_FORMAT format,
+        CD3DX12_CPU_DESCRIPTOR_HANDLE& descriptorHandle) noexcept
+    {
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+        uavDesc.Format = format;
+        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+
+        GetDevice()->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, descriptorHandle);
+        descriptorHandle.Offset(1, GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    }
+
+    template <typename T>
+    auto MyRenderable::CreateUAV(
+        const ComPtr<ID3D12Resource>& buffer,
+        const Memory::FastHeapVector<T>& arr,
+        CD3DX12_CPU_DESCRIPTOR_HANDLE& descriptorHandle) noexcept
+    {
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+        uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+        uavDesc.Buffer.FirstElement = 0;
+        uavDesc.Buffer.NumElements = static_cast<UINT>(arr.size());
+        uavDesc.Buffer.StructureByteStride = sizeof(T);
+        uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+        GetDevice()->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, descriptorHandle);
+        descriptorHandle.Offset(1, GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    }
+
+    Task<void> MyRenderable::Initialise()
     {
         auto rayTracerPath = std::filesystem::current_path() / "Output" / "Shaders" / "RayTracer.dxil";
         std::fstream rayTracerFileStream{ rayTracerPath, std::ios::in | std::ios::binary };
@@ -62,10 +151,116 @@ namespace NurbsViewer
         std::tie(m_rationaliserPSO, m_rationaliserRS) = LoadComputeShader(rationaliserFileStream);
 
         LoadNurbs();
+
+        m_basisFunctionsResource = AllocateStructuredBuffer(
+            m_basisFunctions, 
+            D3D12_HEAP_TYPE_UPLOAD,
+            D3D12_RESOURCE_FLAG_NONE,
+            D3D12_RESOURCE_STATE_COPY_SOURCE | D3D12_RESOURCE_STATE_GENERIC_READ);
+        m_derivativesResource = AllocateStructuredBuffer(
+            m_derivatives,
+            D3D12_HEAP_TYPE_UPLOAD,
+            D3D12_RESOURCE_FLAG_NONE,
+            D3D12_RESOURCE_STATE_COPY_SOURCE | D3D12_RESOURCE_STATE_GENERIC_READ);
+        m_indicesResource = AllocateStructuredBuffer(
+            m_indices, 
+            D3D12_HEAP_TYPE_UPLOAD, 
+            D3D12_RESOURCE_FLAG_NONE, 
+            D3D12_RESOURCE_STATE_COPY_SOURCE | D3D12_RESOURCE_STATE_GENERIC_READ);
+        m_controlPointsResource = AllocateStructuredBuffer(
+            m_controlPoints,
+            D3D12_HEAP_TYPE_UPLOAD,
+            D3D12_RESOURCE_FLAG_NONE,
+            D3D12_RESOURCE_STATE_COPY_SOURCE | D3D12_RESOURCE_STATE_GENERIC_READ);
+
+        m_surfacePatches.resize(m_basisFunctions.size());
+
+        m_surfacePatchesResource = AllocateStructuredBuffer(
+            m_surfacePatches, 
+            D3D12_HEAP_TYPE_DEFAULT,
+            D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        m_surfacePatchesResource->SetName(L"Surface Patches Resource");
+
+        D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+        srvHeapDesc.NumDescriptors = 1;
+        srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        ThrowIfFailed(GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(m_rationaliserDescriptorHeap.ReleaseAndGetAddressOf())));
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_rationaliserDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        CreateUAV(m_surfacePatchesResource, m_surfacePatches, descriptorHandle);
+
+        m_outputTexture = AllocateWritibleTexture(
+            1024,
+            768,
+            DXGI_FORMAT_B8G8R8A8_UNORM
+        );
+
+        D3D12_DESCRIPTOR_HEAP_DESC outputTextureHeapDesc = {};
+        outputTextureHeapDesc.NumDescriptors = 1;
+        outputTextureHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        outputTextureHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        ThrowIfFailed(GetDevice()->CreateDescriptorHeap(
+            &outputTextureHeapDesc, IID_PPV_ARGS(m_rayTracerDescriptorHeap.ReleaseAndGetAddressOf())));
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE outputDescriptorHandle(m_rayTracerDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        CreateOutputTextureUAV(m_outputTexture, DXGI_FORMAT_B8G8R8A8_UNORM, outputDescriptorHandle);
+
+
+        // Pre-computation
+        auto commandList = CreateDirectCommandList();
+
+        auto barrierToUA = CD3DX12_RESOURCE_BARRIER::Transition(
+            m_surfacePatchesResource.Get(),
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+        );
+
+        commandList->ResourceBarrier(1, &barrierToUA);
+
+        commandList->SetPipelineState(m_rationaliserPSO.Get());
+        commandList->SetComputeRootSignature(m_rationaliserRS.Get());
+        commandList->SetComputeRoot32BitConstants(0, sizeof(m_rationaliserData) / sizeof(UINT), &m_rationaliserData, 0);
+        commandList->SetComputeRootShaderResourceView(1, m_basisFunctionsResource->GetGPUVirtualAddress());
+        commandList->SetComputeRootShaderResourceView(2, m_derivativesResource->GetGPUVirtualAddress());
+        commandList->SetComputeRootShaderResourceView(3, m_indicesResource->GetGPUVirtualAddress());
+        commandList->SetComputeRootShaderResourceView(4, m_controlPointsResource->GetGPUVirtualAddress());
+        commandList->SetDescriptorHeaps(1, m_rationaliserDescriptorHeap.GetAddressOf());
+        commandList->SetComputeRootDescriptorTable(5, m_rationaliserDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+        commandList->Dispatch(1, 1, 1);
+
+        auto barrierToSR = CD3DX12_RESOURCE_BARRIER::Transition(
+            m_surfacePatchesResource.Get(),
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
+        );
+
+        commandList->ResourceBarrier(1, &barrierToSR);
+
+        auto task = commandList.GetTask();
+
+        commandList->Close();
+        PushCommandList(std::move(commandList));
+
+        co_await task;
+
+        m_cameraData.outputSize = DirectX::XMUINT2(1024, 768);
+        auto projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(60, 4.0f / 3.0f, 0.01f, 1000);;
+        auto iProjMatrix = XMMatrixTranspose(XMMatrixInverse(nullptr, projectionMatrix));
+        XMStoreFloat4x4(&m_cameraData.iProjMatrix, iProjMatrix);
+
+        m_nurbsTracingConfiguration.errorThreshold = 0.01f;
+        m_nurbsTracingConfiguration.maxIteration = 10;
+        m_nurbsTracingConfiguration.seed = std::random_device{}();
+        m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;
     }
 
     auto MyRenderable::Render(float time) -> void
     {
+        m_cameraData.origin = DirectX::XMFLOAT4{ 2, 2, -2, 1 };
+
         auto commandList = CreateDirectCommandList();
 
         // Transition the render target into the correct state to allow for drawing into it.
@@ -73,10 +268,26 @@ namespace NurbsViewer
             GetCurrentRTV().Get(),
             D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
         commandList->ResourceBarrier(1, &barrierToRT);
-        //commandList->SetPipelineState(m_pipelineState.Get());
 
         auto rtvHandle = GetRTVHandle();
         auto dsvHandle = GetDSVHandle();
+
+        commandList->SetPipelineState(m_rayTracerPSO.Get());
+        commandList->SetComputeRootSignature(m_rayTracerRS.Get());
+        commandList->SetComputeRoot32BitConstants(
+            0,
+            sizeof(m_cameraData) / sizeof(UINT),
+            &m_cameraData,
+            0);
+        commandList->SetComputeRoot32BitConstants(
+            1,
+            sizeof(m_nurbsTracingConfiguration) / sizeof(UINT), 
+            &m_nurbsTracingConfiguration,
+            0);
+        commandList->SetComputeRootShaderResourceView(2, m_surfacePatchesResource->GetGPUVirtualAddress());
+        commandList->SetDescriptorHeaps(1, m_rayTracerDescriptorHeap.GetAddressOf());
+        commandList->SetComputeRootDescriptorTable(3, m_rayTracerDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+        commandList->Dispatch(1, 1, 1);
 
         commandList->OMSetRenderTargets(
             1,
@@ -205,7 +416,8 @@ namespace NurbsViewer
             &m_resourceHeap
         };
 
-        
+        m_rationaliserData.controlPointsStride = 8;
+
         m_U = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5 };
         m_V = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5 };
         
@@ -220,5 +432,6 @@ namespace NurbsViewer
             m_V,
             Engine::Core::Memory::FastLocalAllocator<int>{&m_resourceHeap}
         );
+        m_rationaliserData.patchesCount = static_cast<UINT>(m_basisFunctions.size());
     }
 }

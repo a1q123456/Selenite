@@ -19,6 +19,13 @@ namespace Engine
                     z.EvaluatePolynomial(u, v)
                 );
             }
+
+            void Initialise()
+            {
+                x.Initialise();
+                y.Initialise();
+                z.Initialise();
+            }
         };
     }
 }

@@ -37,7 +37,7 @@ namespace Engine::Graphics::Device
                 break;
             }
             bool stop = job.IsPresentFrame();
-            node.steps.emplace_back(job);
+            node.steps.emplace_back(std::move(job));
             if (stop)
             {
                 break;
