@@ -60,7 +60,7 @@ namespace NurbsViewer
             width,
             height,
             1,
-            0,
+            1,
             1,
             0,
             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
@@ -69,7 +69,7 @@ namespace NurbsViewer
             &heapProperties,
             D3D12_HEAP_FLAG_NONE,
             &resourceDesc,
-            D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+            D3D12_RESOURCE_STATE_COPY_SOURCE,
             nullptr,
             IID_PPV_ARGS(resource.ReleaseAndGetAddressOf())));
 
@@ -207,17 +207,8 @@ namespace NurbsViewer
         CD3DX12_CPU_DESCRIPTOR_HANDLE outputDescriptorHandle(m_rayTracerDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
         CreateOutputTextureUAV(m_outputTexture, DXGI_FORMAT_B8G8R8A8_UNORM, outputDescriptorHandle);
 
-
         // Pre-computation
         auto commandList = CreateDirectCommandList();
-
-        auto barrierToUA = CD3DX12_RESOURCE_BARRIER::Transition(
-            m_surfacePatchesResource.Get(),
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-            D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-        );
-
-        commandList->ResourceBarrier(1, &barrierToUA);
 
         commandList->SetPipelineState(m_rationaliserPSO.Get());
         commandList->SetComputeRootSignature(m_rationaliserRS.Get());
@@ -229,15 +220,15 @@ namespace NurbsViewer
         commandList->SetDescriptorHeaps(1, m_rationaliserDescriptorHeap.GetAddressOf());
         commandList->SetComputeRootDescriptorTable(5, m_rationaliserDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
-        commandList->Dispatch(1, 1, 1);
+        commandList->Dispatch(128, 96, 1);
 
-        auto barrierToSR = CD3DX12_RESOURCE_BARRIER::Transition(
+        auto barrierToUA = CD3DX12_RESOURCE_BARRIER::Transition(
             m_surfacePatchesResource.Get(),
-            D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS
         );
 
-        commandList->ResourceBarrier(1, &barrierToSR);
+        commandList->ResourceBarrier(1, &barrierToUA);
 
         auto task = commandList.GetTask();
 
@@ -247,30 +238,49 @@ namespace NurbsViewer
         co_await task;
 
         m_cameraData.outputSize = DirectX::XMUINT2(1024, 768);
-        auto projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(60, 4.0f / 3.0f, 0.01f, 1000);;
-        auto iProjMatrix = XMMatrixTranspose(XMMatrixInverse(nullptr, projectionMatrix));
+        auto projectionMatrix = DirectX::XMMatrixPerspectiveFovRH(60, 4.0f / 3.0f, 0.01f, 1000);
+
+        DirectX::XMFLOAT3 eyeLocation{ 0, 0, 2 };
+        DirectX::XMFLOAT3 lookAt{ 0, 0, 0 };
+        DirectX::XMFLOAT3 upAxis{ 0, 0, 1 };
+
+        auto viewMatrix = DirectX::XMMatrixLookAtRH(
+            XMLoadFloat3(&eyeLocation),
+            XMLoadFloat3(&lookAt),
+            DirectX::XMLoadFloat3(&upAxis));
+
+        auto iProjMatrix = XMMatrixInverse(nullptr, projectionMatrix);
+        //auto iViewMatrix = DirectX::XMMatrixMultiplyTranspose(viewMatrix, iProjMatrix);
         XMStoreFloat4x4(&m_cameraData.iProjMatrix, iProjMatrix);
 
+        m_cameraData.origin = DirectX::XMFLOAT4{ eyeLocation.x, eyeLocation.y, eyeLocation.z, 1 };
+
         m_nurbsTracingConfiguration.errorThreshold = 0.01f;
-        m_nurbsTracingConfiguration.maxIteration = 10;
-        m_nurbsTracingConfiguration.seed = std::random_device{}();
+        m_nurbsTracingConfiguration.maxIteration = 3;
+        m_nurbsTracingConfiguration.seed = 3541;
         m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;
     }
 
     auto MyRenderable::Render(float time) -> void
     {
-        m_cameraData.origin = DirectX::XMFLOAT4{ 2, 2, -2, 1 };
 
         auto commandList = CreateDirectCommandList();
 
         // Transition the render target into the correct state to allow for drawing into it.
-        const D3D12_RESOURCE_BARRIER barrierToRT = CD3DX12_RESOURCE_BARRIER::Transition(
+        const D3D12_RESOURCE_BARRIER barrierToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(
             GetCurrentRTV().Get(),
-            D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        commandList->ResourceBarrier(1, &barrierToRT);
+            D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
+        commandList->ResourceBarrier(1, &barrierToCopyDest);
 
         auto rtvHandle = GetRTVHandle();
         auto dsvHandle = GetDSVHandle();
+
+
+        const D3D12_RESOURCE_BARRIER barrierCopySourceToUA = CD3DX12_RESOURCE_BARRIER::Transition(
+            m_outputTexture.Get(),
+            D3D12_RESOURCE_STATE_COPY_SOURCE, 
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        commandList->ResourceBarrier(1, &barrierCopySourceToUA);
 
         commandList->SetPipelineState(m_rayTracerPSO.Get());
         commandList->SetComputeRootSignature(m_rayTracerRS.Get());
@@ -287,7 +297,15 @@ namespace NurbsViewer
         commandList->SetComputeRootShaderResourceView(2, m_surfacePatchesResource->GetGPUVirtualAddress());
         commandList->SetDescriptorHeaps(1, m_rayTracerDescriptorHeap.GetAddressOf());
         commandList->SetComputeRootDescriptorTable(3, m_rayTracerDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-        commandList->Dispatch(1, 1, 1);
+        commandList->Dispatch(128, 96, 1);
+
+
+        const D3D12_RESOURCE_BARRIER barrierUAToCopySource = CD3DX12_RESOURCE_BARRIER::Transition(
+            m_outputTexture.Get(),
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        commandList->ResourceBarrier(1, &barrierUAToCopySource);
+
+        commandList->CopyResource(GetCurrentRTV().Get(), m_outputTexture.Get());
 
         commandList->OMSetRenderTargets(
             1,
@@ -295,19 +313,19 @@ namespace NurbsViewer
             FALSE,
             &dsvHandle);
 
-        auto rgba = DirectX::Colors::CornflowerBlue;
-        commandList->ClearRenderTargetView(
-            rtvHandle,
-            rgba,
-            0,
-            nullptr);
-        commandList->ClearDepthStencilView(
-            dsvHandle,
-            D3D12_CLEAR_FLAG_DEPTH,
-            1.0f,
-            0,
-            0,
-            nullptr);
+        //auto rgba = DirectX::Colors::CornflowerBlue;
+        //commandList->ClearRenderTargetView(
+        //    rtvHandle,
+        //    rgba,
+        //    0,
+        //    nullptr);
+        //commandList->ClearDepthStencilView(
+        //    dsvHandle,
+        //    D3D12_CLEAR_FLAG_DEPTH,
+        //    1.0f,
+        //    0,
+        //    0,
+        //    nullptr);
 
         // Set the viewport and scissor rect.
         const D3D12_VIEWPORT viewport = {
@@ -330,7 +348,7 @@ namespace NurbsViewer
         // Transition the render target to the state that allows it to be presented to the display.
         const D3D12_RESOURCE_BARRIER barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(
             GetCurrentRTV().Get(),
-            D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
         commandList->ResourceBarrier(1, &barrierToPresent);
         commandList->Close();
         PushCommandList(std::move(commandList));

@@ -27,13 +27,6 @@ namespace Engine
                 );
             }
 
-            static float PickElement(float2x2 J, int row, int column)
-            {
-                int otherRow = 1 - row;
-                int otherColumn = 1 - column;
-                return J[otherRow][otherColumn];
-            }
-
             float2x2 InverseJacobianMatrix(
                 Math::RationalFunction3D Su,
                 Math::RationalFunction3D Sv,
@@ -70,8 +63,8 @@ namespace Engine
                 float2 currentGuess = lerp(nurbsPatch.maxUV, nurbsPatch.minUV, 0.5);
                 float3 Suv = nurbsPatch.nurbsFunction.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
 
-                float3 su;
-                float3 sv;
+                float3 su = float3(0, 0, 0);
+                float3 sv = float3(0, 0, 0);
                 float2 distance = DistanceToRoot(Suv);
                 float error = -1;
 
@@ -88,11 +81,11 @@ namespace Engine
                     distance = DistanceToRoot(Suv);
                     float newError = dot(distance, distance);
 
-                    break;
-                    if (newError > error)
+                    if (newError > error && error > 0)
                     {
                         return false;
                     }
+                    error = newError;
 
                     if (error <= errorTolerance)
                     {

@@ -25,11 +25,11 @@ namespace Engine
                 float3 absD = abs(D);
                 if (absD.x > absD.y && absD.x > absD.z)
                 {
-                    p1.normal = float3(absD.y, -absD.x, 0);
+                    p1.normal = float3(D.y, -D.x, 0);
                 }
                 else
                 {
-                    p1.normal = float3(0, absD.z, -absD.y);
+                    p1.normal = float3(0, D.z, -D.y);
                 }
 
                 p1.normal /= length(p1.normal);

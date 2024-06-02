@@ -3,15 +3,14 @@
 
 [RootSignature(NurbsRationaliserRS)]
 [numthreads(32, 1, 1)]
-void main(uint3 tid : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
+void main(uint3 tid : SV_DispatchThreadID)
 {
     const int degreeU = 3;
     const int degreeV = 3;
 
     const uint2 degreeUV = uint2(degreeU, degreeV);
 
-    uint3 groupSize = uint3(32, 1, 1);
-    uint3 coordinate = groupSize * groupID + tid;
+    uint3 coordinate = tid;
 
     uint index = coordinate.x;
 

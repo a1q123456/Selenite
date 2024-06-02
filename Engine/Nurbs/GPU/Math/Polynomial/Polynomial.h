@@ -20,7 +20,7 @@ namespace Engine
                     float vToJ = 1;
                     for (int j = 0; j <= degree; j++)
                     {
-                        result += coefficients[i][j] * uToI * vToJ;
+                        result += coefficients[j][i] * uToI * vToJ;
                         vToJ *= v;
                     }
                     uToI *= u;

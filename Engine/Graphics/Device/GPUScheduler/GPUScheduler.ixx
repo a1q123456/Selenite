@@ -81,6 +81,8 @@ namespace Engine::Graphics::Device
         auto CleanupJobs(Vector<JobContext>&& jobs) -> void;
         auto SetupJobContext(GPUJobExecutor::JobID jobID, D3D12_COMMAND_LIST_TYPE queueType, Private::RenderNode&& node) -> void;
 
+        auto CanExitRendererThread(const std::array<bool, CommandListPool::MAX_COMMAND_LIST_TYPE>& queueClosedState) const noexcept -> bool;
+
         static constexpr int MAX_FRAME_DELAY = 3;
         static constexpr int MAX_QUEUED_COMMAND_EXECUTIONS = 3;
 

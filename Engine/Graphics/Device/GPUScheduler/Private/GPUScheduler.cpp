@@ -160,7 +160,7 @@ namespace Engine::Graphics::Device
             }
 
             auto jobExecuted = false;
-            bool closedQueues[CommandListPool::MAX_COMMAND_LIST_TYPE]{};
+            std::array<bool, CommandListPool::MAX_COMMAND_LIST_TYPE> closedQueues{};
             for (auto type : CommandListPool::COMMAND_QUEUE_TYPES)
             {
                 // The queue is idle and there are enough command lists
@@ -171,6 +171,7 @@ namespace Engine::Graphics::Device
 
                 auto finishedJobContexts = PopJobContexts(type, currentJobIDs[type]);
                 CleanupJobs(std::move(finishedJobContexts));
+
                 try
                 {
                     if (!m_gpuJobQueue.TryPullJob(type, GetIdealCommandListsCount(type), node))
@@ -183,6 +184,7 @@ namespace Engine::Graphics::Device
                     closedQueues[type] = true;
                     continue;
                 }
+                
                 jobExecuted = true;
                 ResetEvent(m_fenceEvents[type].Get());
                 auto jobID = m_gpuJobExecutor.ExecuteGPUJob(node);
@@ -195,9 +197,7 @@ namespace Engine::Graphics::Device
             {
                 m_gpuIdle = true;
             }
-            if (closedQueues[D3D12_COMMAND_LIST_TYPE_COMPUTE] &&
-                closedQueues[D3D12_COMMAND_LIST_TYPE_DIRECT] &&
-                closedQueues[D3D12_COMMAND_LIST_TYPE_COPY])
+            if (CanExitRendererThread(closedQueues))
             {
                 return;
             }
@@ -355,6 +355,19 @@ namespace Engine::Graphics::Device
         jobContext.node = std::move(node);
 
         m_jobContexts[queueType].emplace_back(std::make_pair(jobID, std::move(jobContext)));
+    }
+
+    auto GPUScheduler::CanExitRendererThread(const std::array<bool, CommandListPool::MAX_COMMAND_LIST_TYPE>& queueClosedState) const noexcept -> bool
+    {
+        auto allClosed = queueClosedState[D3D12_COMMAND_LIST_TYPE_COMPUTE] &&
+                                queueClosedState[D3D12_COMMAND_LIST_TYPE_DIRECT] &&
+                                queueClosedState[D3D12_COMMAND_LIST_TYPE_COPY];
+
+        auto haveUnfinishedJobs = !std::empty(m_jobContexts[D3D12_COMMAND_LIST_TYPE_COMPUTE]) ||
+                                        !std::empty(m_jobContexts[D3D12_COMMAND_LIST_TYPE_DIRECT]) ||
+                                        !std::empty(m_jobContexts[D3D12_COMMAND_LIST_TYPE_COPY]);
+
+        return allClosed && !haveUnfinishedJobs;
     }
 
     auto GPUScheduler::GetIdealCommandListsCount(D3D12_COMMAND_LIST_TYPE type) const noexcept -> int
