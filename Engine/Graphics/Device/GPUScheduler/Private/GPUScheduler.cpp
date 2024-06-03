@@ -65,6 +65,11 @@ namespace Engine::Graphics::Device
         return m_rootRenderable->SetContext(m_context);
     }
 
+    auto GPUScheduler::GetCurrentRootRenderable() noexcept -> std::unique_ptr<Renderable>&
+    {
+        return m_rootRenderable;
+    }
+
     auto GPUScheduler::Tick() -> void
     {
         bool fireNewFrame = m_statistics.GetQueuedFrames() < MAX_FRAME_DELAY;

@@ -238,31 +238,44 @@ namespace NurbsViewer
         co_await task;
 
         m_cameraData.outputSize = DirectX::XMUINT2(1024, 768);
-        auto projectionMatrix = DirectX::XMMatrixPerspectiveFovRH(60, 4.0f / 3.0f, 0.01f, 1000);
+        auto projectionMatrix = DirectX::XMMatrixPerspectiveFovRH(
+            DirectX::XMConvertToRadians(60), 
+            4.0f / 3.0f, 
+            0.01f, 
+            1000);
 
-        DirectX::XMFLOAT3 eyeLocation{ 0, 0, 2 };
-        DirectX::XMFLOAT3 lookAt{ 0, 0, 0 };
-        DirectX::XMFLOAT3 upAxis{ 0, 0, 1 };
+        m_iprojectionMatrix = XMMatrixInverse(nullptr, projectionMatrix);
 
-        auto viewMatrix = DirectX::XMMatrixLookAtRH(
-            XMLoadFloat3(&eyeLocation),
-            XMLoadFloat3(&lookAt),
-            DirectX::XMLoadFloat3(&upAxis));
 
-        auto iProjMatrix = XMMatrixInverse(nullptr, projectionMatrix);
-        //auto iViewMatrix = DirectX::XMMatrixMultiplyTranspose(viewMatrix, iProjMatrix);
-        XMStoreFloat4x4(&m_cameraData.iProjMatrix, iProjMatrix);
-
-        m_cameraData.origin = DirectX::XMFLOAT4{ eyeLocation.x, eyeLocation.y, eyeLocation.z, 1 };
-
-        m_nurbsTracingConfiguration.errorThreshold = 0.01f;
-        m_nurbsTracingConfiguration.maxIteration = 3;
+        m_nurbsTracingConfiguration.errorThreshold = 0.005f;
+        m_nurbsTracingConfiguration.maxIteration = 5;
         m_nurbsTracingConfiguration.seed = 3541;
         m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;
     }
 
     auto MyRenderable::Render(float time) -> void
     {
+        DirectX::XMFLOAT3 upAxis{ 0, 0, 1 };
+
+        auto viewMatrix = DirectX::XMMatrixLookAtRH(
+            XMLoadFloat3(&m_eyeLocation),
+            m_lookAt,
+            DirectX::XMLoadFloat3(&upAxis));
+
+        //iProjMatrix = DirectX::XMMatrixTranspose(iProjMatrix);
+        auto cameraTransform = DirectX::XMMATRIX(
+            1, 0, 0, 0,
+            0, 0, -1, 0,
+            0, 1, 0, 0,
+            0, 0, 0, 1);
+
+
+        auto rayTransform = XMMatrixMultiplyTranspose(viewMatrix, m_iprojectionMatrix);
+        //auto iViewMatrix = XMMatrixMultiplyTranspose(viewMatrix, iProjMatrix);
+        XMStoreFloat4x4(&m_cameraData.iProjMatrix, rayTransform);
+
+        m_cameraData.origin = DirectX::XMFLOAT4{ m_eyeLocation.x, m_eyeLocation.y, m_eyeLocation.z, 1 };
+
 
         auto commandList = CreateDirectCommandList();
 
@@ -352,6 +365,64 @@ namespace NurbsViewer
         commandList->ResourceBarrier(1, &barrierToPresent);
         commandList->Close();
         PushCommandList(std::move(commandList));
+    }
+
+    void MyRenderable::OnMouseMove(int x, int y)
+    {
+        if (m_mouseX != -1 && m_mouseY != -1)
+        {
+            float deltaX = x - m_mouseX;
+            float deltaY = y - m_mouseY;
+
+            DirectX::XMVECTOR delta{ deltaX, 0, deltaY, 1 };
+
+            delta = DirectX::XMVectorScale(delta, 0.001);
+
+            if (m_mouseLeftDown)
+            {
+                m_lookAt = DirectX::XMVectorAdd(m_lookAt, delta);
+
+                auto log = std::format(L"look at: [{}, {}, {}]",
+                    DirectX::XMVectorGetIntX(m_lookAt),
+                    DirectX::XMVectorGetIntY(m_lookAt),
+                    DirectX::XMVectorGetIntZ(m_lookAt));
+                OutputDebugStringW(log.c_str());
+            }
+            else if (m_mouseRightDown)
+            {
+                auto origin = XMLoadFloat3(&m_eyeLocation);
+
+                origin = DirectX::XMVectorAdd(origin, delta);
+                XMStoreFloat3(&m_eyeLocation, origin);
+            }
+
+        }
+        m_mouseX = x;
+        m_mouseY = y;
+    }
+
+    auto MyRenderable::OnMouseDown(Engine::Graphics::MouseButton button) -> void
+    {
+        if (button == Engine::Graphics::MouseButton::Left)
+        {
+            m_mouseLeftDown = true;
+        }
+        else
+        {
+            m_mouseRightDown = true;
+        }
+    }
+
+    void MyRenderable::OnMouseUp(Engine::Graphics::MouseButton button)
+    {
+        if (button == Engine::Graphics::MouseButton::Left)
+        {
+            m_mouseLeftDown = false;
+        }
+        else
+        {
+            m_mouseRightDown = false;
+        }
     }
 
     auto MyRenderable::LoadNurbs() -> void

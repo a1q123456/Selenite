@@ -8,14 +8,16 @@
 [numthreads(8, 8, 1)]
 void main(uint3 tid : SV_DispatchThreadID)
 {
-    uint3 coordinate = tid.xyz;
+    uint2 coordinate = tid.xy;
 
-    float2 ndc = float2(coordinate.xy) / float2(cameraData.outputSize);
-    float3 direction = mul(cameraData.iProjMatrix, float4(ndc.xy, 0.0, 1.0)).xyz;
-    renderTarget[coordinate.xy] = float4(0, 0, 0, 0);
+    float2 ndc = float2(coordinate) / float2(cameraData.outputSize) - float2(0.5, 0.5);
+    float3 direction = mul(cameraData.iProjMatrix, float4(ndc.xy, 0.0, 0.01)).xyz;
+    renderTarget[coordinate] = float4(0, 0, 0, 0);
 
     direction /= length(direction);
+    //renderTarget[coordinate] = float4((direction + float3(1, 1, 1)) / 2, 1);
 
+    //return;
     Engine::NurbsRayTracer::Ray ray = Engine::NurbsRayTracer::Ray::MakeRay(cameraData.origin.xyz,
         direction);
 
@@ -27,17 +29,14 @@ void main(uint3 tid : SV_DispatchThreadID)
         float3 position = float3(0, 0, 0);
         float3 normal = float3(0, 0, 0);
 
-        //if (coordinate.x <= 10 && coordinate.y <= 10)
+        if (intersectingRay.TraceRay(
+                nurbsPatches[i], 
+                nurbsTracingConfiguration.errorThreshold, 
+                nurbsTracingConfiguration.maxIteration, 
+                uv, position, normal))
         {
-            if (intersectingRay.TraceRay(
-                    nurbsPatches[i], 
-                    nurbsTracingConfiguration.errorThreshold, 
-                    nurbsTracingConfiguration.maxIteration, 
-                    uv, position, normal))
-            {
-                // TODO coloring, texturing, etc.
-                renderTarget[coordinate.xy] = float4(uv.xy / 25.0f, 1, 1);
-            }
+            // TODO coloring, texturing, etc.
+            renderTarget[coordinate] = float4(normal, 1);
         }
     }
 

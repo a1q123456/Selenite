@@ -27,6 +27,9 @@ namespace NurbsViewer
         MyRenderable();
         Task<void> Initialise() override;
         auto Render(float time) -> void override;
+        auto OnMouseMove(int x, int y) -> void override;
+        auto OnMouseDown(Engine::Graphics::MouseButton button) -> void override;
+        auto OnMouseUp(Engine::Graphics::MouseButton button) -> void override;
     private:
         auto LoadNurbs() -> void;
         auto LoadComputeShader(std::istream& shaderStream) const noexcept
@@ -78,6 +81,14 @@ namespace NurbsViewer
         SurfaceBasisFunctionsArray<Memory::FastLocalAllocator> m_basisFunctions;
         SurfaceBasisDerivativesArray<Memory::FastLocalAllocator> m_derivatives;
         SurfacePatchIndexArray<Memory::FastLocalAllocator> m_indices;
+        DirectX::XMMATRIX m_iprojectionMatrix{};
+        DirectX::XMVECTOR m_lookAt{0, 0, 0};
+        DirectX::XMFLOAT3 m_eyeLocation{ 0, -2, 0 };
+
+        int m_mouseX = -1;
+        int m_mouseY = -1;
+        bool m_mouseLeftDown = false;
+        bool m_mouseRightDown = false;
 
         bool m_done = false;
         bool m_dispatched = false;

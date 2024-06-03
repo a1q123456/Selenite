@@ -18,11 +18,22 @@ namespace Engine::Graphics
         export class Context;
     }
 
+    // TODO Move this to somewhere else
+    export enum class MouseButton
+    {
+        Left,
+        Middle,
+        Right
+    };
+
     export class Renderable
     {
     public:
         virtual Task<void> Initialise();
         virtual auto Render(float time) -> void = 0;
+        virtual auto OnMouseMove(int x, int y) -> void;
+        virtual auto OnMouseDown(MouseButton button) -> void;
+        virtual auto OnMouseUp(MouseButton button) -> void;
         virtual ~Renderable() = default;
 
     protected:

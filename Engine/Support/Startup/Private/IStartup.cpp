@@ -1,5 +1,6 @@
 module;
 #include <Windows.h>
+#include <Windowsx.h>
 #include <wrl.h>
 #include <DirectXMath.h>
 module Engine.Support.IStartup;
@@ -138,6 +139,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
+    case WM_MOUSEMOVE:
+        {
+            int xPos = GET_X_LPARAM(lParam);
+            int yPos = GET_Y_LPARAM(lParam);
+            Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseMove(xPos, yPos);
+            break;
+        }
+    case WM_LBUTTONDOWN:
+        {
+            Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseDown(Engine::Graphics::MouseButton::Left);
+            break;
+        }
+    case WM_LBUTTONUP:
+        {
+            Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseUp(Engine::Graphics::MouseButton::Left);
+            break;
+        }
+    case WM_RBUTTONDOWN:
+        {
+            Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseDown(Engine::Graphics::MouseButton::Right);
+            break;
+        }
+    case WM_RBUTTONUP:
+    {
+        Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseUp(Engine::Graphics::MouseButton::Right);
+        break;
+    }
     case WM_CREATE:
         if (lParam)
         {

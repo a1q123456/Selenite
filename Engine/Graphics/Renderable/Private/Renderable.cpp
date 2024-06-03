@@ -9,6 +9,18 @@ namespace Engine::Graphics
         return {};
     }
 
+    auto Renderable::OnMouseMove(int x, int y) -> void
+    {
+    }
+
+    auto Renderable::OnMouseDown(MouseButton button) -> void
+    {
+    }
+
+    auto Renderable::OnMouseUp(MouseButton button) -> void
+    {
+    }
+
     auto Renderable::PushCommandList(Device::GraphicsCommandList&& commandList) const noexcept -> void
     {
         m_context->GetGPUScheduler()

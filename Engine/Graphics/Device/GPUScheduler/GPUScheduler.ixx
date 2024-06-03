@@ -28,6 +28,7 @@ namespace Engine::Graphics::Device
         auto Initialise(Context* context) -> void;
         auto Teardown() -> void;
         Core::Threading::Task<void> SetRootRenderable(std::unique_ptr<Renderable> renderable);
+        auto GetCurrentRootRenderable() noexcept -> std::unique_ptr<Renderable>&;
 
         auto Tick() -> void;
         ~GPUScheduler() noexcept;
