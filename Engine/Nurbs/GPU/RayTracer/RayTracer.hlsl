@@ -16,10 +16,8 @@ void main(uint3 tid : SV_DispatchThreadID)
 
     direction /= length(direction);
 
-    //cameraData.origin.xyz
-    //direction
-    Engine::NurbsRayTracer::Ray ray = Engine::NurbsRayTracer::Ray::MakeRay(float3(0, 0, 2),
-        float3(0, 0, -1));
+    Engine::NurbsRayTracer::Ray ray = Engine::NurbsRayTracer::Ray::MakeRay(cameraData.origin.xyz,
+        direction);
 
     Engine::NurbsRayTracer::IntersectingPlanesRay intersectingRay = ray.DefineRayAsPlaneIntersection();
 
@@ -29,7 +27,7 @@ void main(uint3 tid : SV_DispatchThreadID)
         float3 position = float3(0, 0, 0);
         float3 normal = float3(0, 0, 0);
 
-        if (coordinate.x <= 10 && coordinate.y <= 10)
+        //if (coordinate.x <= 10 && coordinate.y <= 10)
         {
             if (intersectingRay.TraceRay(
                     nurbsPatches[i], 

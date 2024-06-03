@@ -220,7 +220,7 @@ namespace NurbsViewer
         commandList->SetDescriptorHeaps(1, m_rationaliserDescriptorHeap.GetAddressOf());
         commandList->SetComputeRootDescriptorTable(5, m_rationaliserDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
-        commandList->Dispatch(128, 96, 1);
+        commandList->Dispatch(1, 1, 1);
 
         auto barrierToUA = CD3DX12_RESOURCE_BARRIER::Transition(
             m_surfacePatchesResource.Get(),
