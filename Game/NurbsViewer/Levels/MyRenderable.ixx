@@ -31,6 +31,7 @@ namespace NurbsViewer
         auto OnMouseDown(Engine::Graphics::MouseButton button) -> void override;
         auto OnMouseUp(Engine::Graphics::MouseButton button) -> void override;
     private:
+        auto MoveView() noexcept -> void;
         auto LoadNurbs() -> void;
         auto LoadComputeShader(std::istream& shaderStream) const noexcept
             -> std::pair<ComPtr<ID3D12PipelineState>, ComPtr<ID3D12RootSignature>>;
@@ -84,6 +85,7 @@ namespace NurbsViewer
         DirectX::XMMATRIX m_iprojectionMatrix{};
         DirectX::XMVECTOR m_lookAt{0, 0, 0};
         DirectX::XMFLOAT3 m_eyeLocation{ 0, -2, 0 };
+        DirectX::XMVECTOR m_sphericalCoordinates{ 0, 0 };
 
         int m_mouseX = -1;
         int m_mouseY = -1;

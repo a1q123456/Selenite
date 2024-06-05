@@ -239,7 +239,7 @@ namespace NurbsViewer
 
         m_cameraData.outputSize = DirectX::XMUINT2(1024, 768);
         auto projectionMatrix = DirectX::XMMatrixPerspectiveFovRH(
-            DirectX::XMConvertToRadians(60), 
+            DirectX::XMConvertToRadians(70), 
             4.0f / 3.0f, 
             0.01f, 
             1000);
@@ -247,10 +247,12 @@ namespace NurbsViewer
         m_iprojectionMatrix = XMMatrixInverse(nullptr, projectionMatrix);
 
 
-        m_nurbsTracingConfiguration.errorThreshold = 0.005f;
+        m_nurbsTracingConfiguration.errorThreshold = 0.0000001f;
         m_nurbsTracingConfiguration.maxIteration = 5;
         m_nurbsTracingConfiguration.seed = 3541;
         m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;
+        m_sphericalCoordinates = DirectX::XMVECTOR{ 0.1, 0.1, 0, 0 };
+        MoveView();
     }
 
     auto MyRenderable::Render(float time) -> void
@@ -262,16 +264,7 @@ namespace NurbsViewer
             m_lookAt,
             DirectX::XMLoadFloat3(&upAxis));
 
-        //iProjMatrix = DirectX::XMMatrixTranspose(iProjMatrix);
-        auto cameraTransform = DirectX::XMMATRIX(
-            1, 0, 0, 0,
-            0, 0, -1, 0,
-            0, 1, 0, 0,
-            0, 0, 0, 1);
-
-
         auto rayTransform = XMMatrixMultiplyTranspose(viewMatrix, m_iprojectionMatrix);
-        //auto iViewMatrix = XMMatrixMultiplyTranspose(viewMatrix, iProjMatrix);
         XMStoreFloat4x4(&m_cameraData.iProjMatrix, rayTransform);
 
         m_cameraData.origin = DirectX::XMFLOAT4{ m_eyeLocation.x, m_eyeLocation.y, m_eyeLocation.z, 1 };
@@ -374,19 +367,14 @@ namespace NurbsViewer
             float deltaX = x - m_mouseX;
             float deltaY = y - m_mouseY;
 
-            DirectX::XMVECTOR delta{ deltaX, 0, deltaY, 1 };
+            DirectX::XMVECTOR delta{ deltaX, -deltaY, 0, 0 };
 
             delta = DirectX::XMVectorScale(delta, 0.001);
 
             if (m_mouseLeftDown)
             {
-                m_lookAt = DirectX::XMVectorAdd(m_lookAt, delta);
-
-                auto log = std::format(L"look at: [{}, {}, {}]",
-                    DirectX::XMVectorGetIntX(m_lookAt),
-                    DirectX::XMVectorGetIntY(m_lookAt),
-                    DirectX::XMVectorGetIntZ(m_lookAt));
-                OutputDebugStringW(log.c_str());
+                m_sphericalCoordinates = DirectX::XMVectorAdd(m_sphericalCoordinates, delta);
+                MoveView();
             }
             else if (m_mouseRightDown)
             {
@@ -423,6 +411,34 @@ namespace NurbsViewer
         {
             m_mouseRightDown = false;
         }
+
+        m_mouseX = -1;
+        m_mouseY = -1;
+    }
+
+    auto MyRenderable::MoveView() noexcept -> void
+    {
+        constexpr float r = 7.0f;
+
+        float theta = DirectX::XMVectorGetY(m_sphericalCoordinates);
+        float phi = DirectX::XMVectorGetX(m_sphericalCoordinates);
+
+        float sinTheta = std::sin(theta);
+        float cosTheta = std::cos(theta);
+        float sinPhi = std::sin(phi);
+        float cosPhi = std::cos(phi);
+
+        m_eyeLocation = DirectX::XMFLOAT3{
+                r * sinTheta * cosPhi,
+                r * sinTheta * sinPhi,
+                r * cosTheta
+        };
+
+        auto log = std::format(L"eye location at: [{}, {}, {}]\n",
+            m_eyeLocation.x,
+            m_eyeLocation.y,
+            m_eyeLocation.z);
+        OutputDebugStringW(log.c_str());
     }
 
     auto MyRenderable::LoadNurbs() -> void

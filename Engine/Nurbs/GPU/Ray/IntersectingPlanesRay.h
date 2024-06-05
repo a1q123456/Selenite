@@ -22,8 +22,8 @@ namespace Engine
             float2 DistanceToRoot(float3 position)
             {
                 return float2(
-                    dot(plane1.normal, position) + plane1.offset,
-                    dot(plane2.normal, position) + plane2.offset
+                    dot(plane1.normal, position) - plane1.offset,
+                    dot(plane2.normal, position) - plane2.offset
                 );
             }
 
@@ -55,7 +55,9 @@ namespace Engine
                     }
                 }
 
-                return float2x2(J._m11, -J._m01, -J._m10, J._m00) / det;
+                return float2x2(
+                    J._m11, -J._m10,
+                    -J._m01 , J._m00) / det;
             }
 
             bool TraceRay(Math::NurbsPatch nurbsPatch, float errorTolerance, int maxIteration, out float2 uv, out float3 position, out float3 normal)
@@ -81,10 +83,10 @@ namespace Engine
                     distance = DistanceToRoot(Suv);
                     float newError = dot(distance, distance);
 
-                    if (newError > error && error > 0)
-                    {
-                        return false;
-                    }
+                    //if (newError > error && error > 0)
+                    //{
+                    //    return false;
+                    //}
                     error = newError;
 
                     if (error <= errorTolerance)
@@ -98,7 +100,8 @@ namespace Engine
                     return false;
                 }
 
-                if (Suv.x - O.x / D.x < 0)
+                float t = dot(Suv - O, D);
+                if (t < 0)
                 {
                     return false;
                 }

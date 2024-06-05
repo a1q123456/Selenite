@@ -9,6 +9,10 @@
 void main(uint3 tid : SV_DispatchThreadID)
 {
     uint2 coordinate = tid.xy;
+    //if (coordinate.x <= 700 || coordinate.y <= 500)
+    //{
+    //    return;
+    //}
 
     float2 ndc = float2(coordinate) / float2(cameraData.outputSize) - float2(0.5, 0.5);
     float3 direction = mul(cameraData.iProjMatrix, float4(ndc.xy, 0.0, 0.01)).xyz;
