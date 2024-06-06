@@ -116,7 +116,7 @@ namespace Engine::Graphics::Device
     {
         for (auto& fenceEvent : m_fenceEvents)
         {
-            fenceEvent.Attach(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
+            fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
             if (!fenceEvent.IsValid())
             {
                 throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
@@ -191,7 +191,7 @@ namespace Engine::Graphics::Device
                 }
                 
                 jobExecuted = true;
-                ResetEvent(m_fenceEvents[type].Get());
+                //ResetEvent(m_fenceEvents[type].Get());
                 auto jobID = m_gpuJobExecutor.ExecuteGPUJob(node);
                 SetupJobContext(jobID, type, std::move(node));
                 ThrowIfFailed(

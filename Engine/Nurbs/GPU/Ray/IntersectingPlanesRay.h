@@ -60,8 +60,9 @@ namespace Engine
                     -J._m01 , J._m00) / det;
             }
 
-            bool TraceRay(Math::NurbsPatch nurbsPatch, float errorTolerance, int maxIteration, out float2 uv, out float3 position, out float3 normal)
+            bool TraceRay(Math::NurbsPatch nurbsPatch, float errorTolerance, int maxIteration, out float2 uv, out float3 position, out float3 normal, out float t)
             {
+                t = -1;
                 float2 currentGuess = lerp(nurbsPatch.maxUV, nurbsPatch.minUV, 0.5);
                 float3 Suv = nurbsPatch.nurbsFunction.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
 
@@ -83,10 +84,10 @@ namespace Engine
                     distance = DistanceToRoot(Suv);
                     float newError = dot(distance, distance);
 
-                    //if (newError > error && error > 0)
-                    //{
-                    //    return false;
-                    //}
+                    if (newError > error && error > 0)
+                    {
+                        return false;
+                    }
                     error = newError;
 
                     if (error <= errorTolerance)
@@ -100,7 +101,7 @@ namespace Engine
                     return false;
                 }
 
-                float t = dot(Suv - O, D);
+                t = dot(Suv - O, D);
                 if (t < 0)
                 {
                     return false;

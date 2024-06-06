@@ -207,6 +207,7 @@ namespace NurbsViewer
         CD3DX12_CPU_DESCRIPTOR_HANDLE outputDescriptorHandle(m_rayTracerDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
         CreateOutputTextureUAV(m_outputTexture, DXGI_FORMAT_B8G8R8A8_UNORM, outputDescriptorHandle);
 
+        //return {};
         // Pre-computation
         auto commandList = CreateDirectCommandList();
 
@@ -230,12 +231,10 @@ namespace NurbsViewer
 
         commandList->ResourceBarrier(1, &barrierToUA);
 
-        auto task = commandList.GetTask();
 
         commandList->Close();
-        PushCommandList(std::move(commandList));
 
-        co_await task;
+        co_await ExecuteCommandAsync(std::move(commandList));
 
         m_cameraData.outputSize = DirectX::XMUINT2(1024, 768);
         auto projectionMatrix = DirectX::XMMatrixPerspectiveFovRH(
@@ -251,7 +250,9 @@ namespace NurbsViewer
         m_nurbsTracingConfiguration.maxIteration = 5;
         m_nurbsTracingConfiguration.seed = 3541;
         m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;
-        m_sphericalCoordinates = DirectX::XMVECTOR{ 0.1, 0.1, 0, 0 };
+        m_sphericalCoordinates = DirectX::XMVECTOR{
+            std::numbers::pi_v<float> / 3.0f,
+            std::numbers::pi_v<float>, 0, 0 };
         MoveView();
     }
 
@@ -319,20 +320,6 @@ namespace NurbsViewer
             FALSE,
             &dsvHandle);
 
-        //auto rgba = DirectX::Colors::CornflowerBlue;
-        //commandList->ClearRenderTargetView(
-        //    rtvHandle,
-        //    rgba,
-        //    0,
-        //    nullptr);
-        //commandList->ClearDepthStencilView(
-        //    dsvHandle,
-        //    D3D12_CLEAR_FLAG_DEPTH,
-        //    1.0f,
-        //    0,
-        //    0,
-        //    nullptr);
-
         // Set the viewport and scissor rect.
         const D3D12_VIEWPORT viewport = {
             0.0f,
@@ -364,12 +351,12 @@ namespace NurbsViewer
     {
         if (m_mouseX != -1 && m_mouseY != -1)
         {
-            float deltaX = x - m_mouseX;
-            float deltaY = y - m_mouseY;
+            float deltaX = static_cast<float>(x - m_mouseX);
+            float deltaY = static_cast<float>(y - m_mouseY);
 
-            DirectX::XMVECTOR delta{ deltaX, -deltaY, 0, 0 };
+            DirectX::XMVECTOR delta{ -deltaY, -deltaX, 0, 0 };
 
-            delta = DirectX::XMVectorScale(delta, 0.001);
+            delta = DirectX::XMVectorScale(delta, 0.001f);
 
             if (m_mouseLeftDown)
             {
@@ -420,8 +407,8 @@ namespace NurbsViewer
     {
         constexpr float r = 7.0f;
 
-        float theta = DirectX::XMVectorGetY(m_sphericalCoordinates);
-        float phi = DirectX::XMVectorGetX(m_sphericalCoordinates);
+        float theta = DirectX::XMVectorGetX(m_sphericalCoordinates);
+        float phi = DirectX::XMVectorGetY(m_sphericalCoordinates);
 
         float sinTheta = std::sin(theta);
         float cosTheta = std::cos(theta);

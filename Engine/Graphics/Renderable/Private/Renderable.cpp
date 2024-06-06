@@ -26,6 +26,7 @@ namespace Engine::Graphics
         m_context->GetGPUScheduler()
             ->PushCommands(std::move(commandList));
     }
+
     auto Renderable::PresentFrame() const noexcept -> void
     {
         return PushCommandList({});
@@ -79,6 +80,14 @@ namespace Engine::Graphics
     auto Renderable::GetDevice() const noexcept -> ComPtr<ID3D12Device>
     {
         return m_context->GetDevice();
+    }
+
+    Task<void> Renderable::ExecuteCommandAsync(Device::GraphicsCommandList&& commandList) const noexcept
+    {
+        auto task = commandList.GetTask();
+        m_context->GetGPUScheduler()
+            ->PushCommands(std::move(commandList));
+        return task;
     }
 
     auto Renderable::CreateCommandList(D3D12_COMMAND_LIST_TYPE type) const noexcept -> Device::GraphicsCommandList
