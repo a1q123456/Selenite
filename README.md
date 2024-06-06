@@ -13,6 +13,5 @@ This project finds the intersection between a ray and a NURBS patch using Newton
 ## Current result
 ![image](https://github.com/a1q123456/Selenite/assets/1059544/8ebc709e-4341-4594-bcec-724278c14eb1)
 
-I need to fix the camera movement logic, I currently can't rotate the view nicely.
 I'm currently using the normal as the colour, which is not nice. It's not difficult to add textures to the surface in the future.
 
