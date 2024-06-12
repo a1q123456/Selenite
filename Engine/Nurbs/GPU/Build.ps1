@@ -23,3 +23,4 @@ Get-ChildItem -Path $shadersDir -Filter *.hlsl -Recurse | ForEach-Object {
     & $dxcCompiler -T "cs_6_5" -E "main" -Od -Zi -I $projectDir -HV 2021 $_.FullName  -Fd $outputDir\ -Fo (Join-Path $outputDir ($_.BaseName + ".dxil"))
 }
 
+ 

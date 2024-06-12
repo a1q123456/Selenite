@@ -10,6 +10,7 @@ namespace Engine
             Polynomial3D numerator;
             Polynomial denominator;
             bool isRational;
+            bool3 unused;
 
             float3 EvaluateRationalFunction(float u, float v)
             {
