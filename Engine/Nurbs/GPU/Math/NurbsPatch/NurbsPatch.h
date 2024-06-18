@@ -15,7 +15,8 @@ namespace Engine
             float2 minUV;
             float2 maxUV;
 
-            //NurbsRayTracer::AABB boundingBox;
+            uint2 samplesCount;
+            uint2 unused;
 
             void Initialise()
             {
@@ -25,6 +26,7 @@ namespace Engine
 
                 minUV = float2(0, 0);
                 maxUV = float2(0, 0);
+                samplesCount = uint2(0, 0);
             }
         };
     }

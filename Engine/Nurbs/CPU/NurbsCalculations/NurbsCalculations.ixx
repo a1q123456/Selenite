@@ -236,7 +236,7 @@ namespace Engine::Nurbs
         constexpr int degree = 3;
 
         auto patchIndex = surfacePatchIndices[currentPatchIndex];
-        XMFLOAT4 maxVal{};
+        float maxVal = 0;
         bool first = true;
         for (unsigned int i = 0; i < degree; i++)
         {
@@ -249,16 +249,11 @@ namespace Engine::Nurbs
                 if (first)
                 {
                     first = false;
-                    maxVal = currentVal;
+                    maxVal = XMVectorGetX(XMVector4Length(XMLoadFloat4(&currentVal)));
                     continue;
                 }
 
-                maxVal = XMFLOAT4{
-                    std::max(maxVal.x, currentVal.x),
-                    std::max(maxVal.y, currentVal.y),
-                    std::max(maxVal.z, currentVal.z),
-                    std::max(maxVal.w, currentVal.w),
-                };
+                maxVal = std::max(maxVal, XMVectorGetX(XMVector4Length(XMLoadFloat4(&currentVal))));
             }
         }
 

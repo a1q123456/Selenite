@@ -5,6 +5,7 @@
 [numthreads(64, 1, 1)]
 void main(uint3 tid : SV_DispatchThreadID)
 {
+    const float SUBDIVISION_EPSILON = 0.2;
     const int degreeU = 3;
     const int degreeV = 3;
 
@@ -36,6 +37,8 @@ void main(uint3 tid : SV_DispatchThreadID)
     float4x4 derivativeVNum[4][4][3];
     float4x4 derivativeVDen[4][4];
 
+    float maxLength = 0;
+    float minWeight = 0;
     bool isRational = false;
     float previousW = 0;
     bool isFirst = true;
@@ -50,6 +53,8 @@ void main(uint3 tid : SV_DispatchThreadID)
             if (isFirst)
             {
                 previousW = controlPoint.w;
+                minWeight = controlPoint.w;
+                maxLength = length((float3) controlPoint);
                 isFirst = false;
             }
             else if (controlPoint.w != previousW)
@@ -72,6 +77,9 @@ void main(uint3 tid : SV_DispatchThreadID)
             derivativeVNum[i][j][0] = derivativeVDen[i][j] * controlPoint.x;
             derivativeVNum[i][j][1] = derivativeVDen[i][j] * controlPoint.y;
             derivativeVNum[i][j][2] = derivativeVDen[i][j] * controlPoint.z;
+
+            maxLength = max(length((float3) controlPoint), maxLength);
+            minWeight = min(controlPoint.w, minWeight);
         }
     }
     for (int i = 0; i <= degreeU; i++)
@@ -102,6 +110,9 @@ void main(uint3 tid : SV_DispatchThreadID)
     nurbsPatches[index].nurbsFunction.isRational = isRational;
     nurbsPatches[index].partialDerivativeU.isRational = isRational;
     nurbsPatches[index].partialDerivativeV.isRational = isRational;
+    float upperBound = maxLength / minWeight;
+    float val = sqrt(upperBound / (8 * SUBDIVISION_EPSILON));
+    nurbsPatches[index].samplesCount = ceil(patchIndex.maxUV.x - patchIndex.minUV * val);
 }
 
 
