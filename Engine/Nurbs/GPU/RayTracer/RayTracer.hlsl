@@ -3,6 +3,7 @@
 #include "Engine/Nurbs/GPU/Constants/RayTracerConstants.h"
 
 #include "Engine/Nurbs/GPU/Ray/Ray.h"
+#include "Engine/Nurbs/GPU/Ray/IntersectingPlanesRay.h"
 
 [RootSignature(NurbsRaytracerRS)]
 [numthreads(8, 8, 1)]
@@ -25,7 +26,7 @@ void main(uint3 tid : SV_DispatchThreadID)
     Engine::NurbsRayTracer::Ray ray = Engine::NurbsRayTracer::Ray::MakeRay(cameraData.origin.xyz,
         direction);
 
-    Engine::NurbsRayTracer::IntersectingPlanesRay intersectingRay = ray.DefineRayAsPlaneIntersection();
+    Engine::NurbsRayTracer::IntersectingPlanesRay intersectingRay = Engine::NurbsRayTracer::IntersectingPlanesRay::FromRay(ray);
 
     float minDistance = -1;
     for (int i = 0; i < nurbsTracingConfiguration.patchesCount; i++)
@@ -47,7 +48,7 @@ void main(uint3 tid : SV_DispatchThreadID)
             }
             minDistance = distance;
             // TODO coloring, texturing, etc.
-            renderTarget[coordinate] = float4(normal, 1);
+            renderTarget[coordinate] = float4(uv / 5.0f, 1, 1);
         }
     }
 

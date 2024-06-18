@@ -1,7 +1,5 @@
 #pragma once
-#include "IntersectingPlanesRay.h"
-#include "Engine/Nurbs/GPU/Plane/Plane.h"
-
+#include "Engine/Nurbs/GPU/AABB/AABB.h"
 
 namespace Engine
 {
@@ -18,33 +16,9 @@ namespace Engine
                 return r;
             }
 
-            IntersectingPlanesRay DefineRayAsPlaneIntersection()
+            bool IntersectsAABB(AABB boundingBox)
             {
-                Plane p1;
-                Plane p2;
-                float3 absD = abs(D);
-                if (absD.x > absD.y && absD.x > absD.z)
-                {
-                    p1.normal = float3(D.y, -D.x, 0);
-                }
-                else
-                {
-                    p1.normal = float3(0, D.z, -D.y);
-                }
-
-                p1.normal /= length(p1.normal);
-
-                p2.normal = cross(p1.normal, D);
-                p1.offset = dot(p1.normal, O);
-                p2.offset = dot(p2.normal, O);
-
-                IntersectingPlanesRay result;
-
-                result.plane1 = p1;
-                result.plane2 = p2;
-                result.O = O;
-                result.D = D;
-                return result;
+                return false;
             }
 
             float3 O;

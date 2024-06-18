@@ -40,13 +40,13 @@ namespace NurbsViewer
         auto AllocateStructuredBuffer(const Memory::FastHeapVector<T>& arr, D3D12_HEAP_TYPE heapType, D3D12_RESOURCE_FLAGS resourceFlags, D3D12_RESOURCE_STATES defaultState) noexcept
             -> ComPtr<ID3D12Resource>;
 
-        auto AllocateWritibleTexture(int width, int height, DXGI_FORMAT format) noexcept
+        auto AllocateWritableTexture(int width, int height, DXGI_FORMAT format) const noexcept
             -> ComPtr<ID3D12Resource>;
         
         auto CreateOutputTextureUAV(
             const ComPtr<ID3D12Resource>& buffer,
             DXGI_FORMAT format,
-            CD3DX12_CPU_DESCRIPTOR_HANDLE& descriptorHandle) noexcept;
+            CD3DX12_CPU_DESCRIPTOR_HANDLE& descriptorHandle) const noexcept;
 
         template <typename T>
         auto CreateUAV(
@@ -81,11 +81,12 @@ namespace NurbsViewer
         Memory::FastHeapVector<SurfacePatch> m_surfacePatches;
         SurfaceBasisFunctionsArray<Memory::FastLocalAllocator> m_basisFunctions;
         SurfaceBasisDerivativesArray<Memory::FastLocalAllocator> m_derivatives;
-        SurfacePatchIndexArray<Memory::FastLocalAllocator> m_indices;
+        SurfacePatchIndicesArray<Memory::FastLocalAllocator> m_indices;
         DirectX::XMMATRIX m_iprojectionMatrix{};
         DirectX::XMVECTOR m_lookAt{0, 0, 0};
         DirectX::XMFLOAT3 m_eyeLocation{ 0, -2, 0 };
         DirectX::XMVECTOR m_sphericalCoordinates{ 0, 0 };
+        float m_cameraDistance = 7.0f;
 
         int m_mouseX = -1;
         int m_mouseY = -1;

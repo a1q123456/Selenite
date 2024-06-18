@@ -10,6 +10,26 @@ import std;
 
 namespace Engine::Nurbs
 {
+    export template <template<typename> typename TAllocator>
+        using SurfaceBasisFunctionsArray = std::vector<SurfaceBasisFunctions, TAllocator<SurfaceBasisFunctions>>;
+
+    export template <template<typename> typename TAllocator>
+        using SurfaceBasisDerivativesArray = std::vector<SurfaceBasisFunctionsDerivatives, TAllocator<SurfaceBasisFunctionsDerivatives>>;
+
+    export template <template<typename> typename TAllocator>
+    using SurfacePatchesArray = std::vector<SurfacePatch, TAllocator<SurfacePatch>>;
+
+    export template <template<typename> typename TAllocator>
+        using SurfacePatchIndicesArray = std::vector<SurfacePatchIndex, TAllocator<SurfacePatchIndex>>;
+
+    export using SurfacePatchIndicesView = std::span<SurfacePatchIndex>;
+
+    export using KnotVector = std::span<float>;
+
+    export using ControlPointsView = std::mdspan<DirectX::XMFLOAT4, std::extents<std::size_t, std::dynamic_extent, std::dynamic_extent>>;
+    export using SurfacePatchesView = std::span<SurfacePatch>;
+
+
     int GetNextKnot(std::span<float> U, int k = -1)
     {
         constexpr int degree = 3;
@@ -30,18 +50,16 @@ namespace Engine::Nurbs
         return k;
     }
 
-    export using ControlPointsArray = std::mdspan<DirectX::XMFLOAT4, std::extents<std::size_t, std::dynamic_extent, std::dynamic_extent>>;
-
     export template <template<typename> typename TAllocator = std::allocator>
         auto GetNurbsSurfacePatches(
-            ControlPointsArray P,
+            ControlPointsView P,
             std::span<float> U,
             std::span<float> V,
             TAllocator<SurfacePatch> allocator
-        ) noexcept -> std::vector<SurfacePatch, TAllocator<SurfacePatch>>
+        ) noexcept -> SurfacePatchesArray<TAllocator>
     {
         constexpr int degree = 3;
-        std::vector<SurfacePatch, TAllocator<SurfacePatch>> result{ allocator };
+        SurfacePatchesArray<TAllocator> result{ allocator };
 
         auto u = GetNextKnot(U);
         auto nextU = GetNextKnot(U, u);
@@ -126,24 +144,15 @@ namespace Engine::Nurbs
         return result;
     }
 
-    export template <template<typename> typename TAllocator>
-    using SurfaceBasisFunctionsArray = std::vector<SurfaceBasisFunctions, TAllocator<SurfaceBasisFunctions>>;
-
-    export template <template<typename> typename TAllocator>
-    using SurfaceBasisDerivativesArray = std::vector<SurfaceBasisFunctionsDerivatives, TAllocator<SurfaceBasisFunctionsDerivatives>>;
-
-    export template <template<typename> typename TAllocator>
-    using SurfacePatchIndexArray = std::vector<SurfacePatchIndex, TAllocator<SurfacePatchIndex>>;
-
     export template <template<typename> typename TAllocator = std::allocator>
     auto GetNurbsSurfaceFunctions(
-            std::span<float> U,
-            std::span<float> V,
+            KnotVector U,
+            KnotVector V,
             TAllocator<int> allocator
         ) noexcept -> std::tuple<
                                 SurfaceBasisFunctionsArray<TAllocator>,
                                 SurfaceBasisDerivativesArray<TAllocator>,
-                                SurfacePatchIndexArray<TAllocator>
+                                SurfacePatchIndicesArray<TAllocator>
                       >
     
     {
@@ -154,7 +163,7 @@ namespace Engine::Nurbs
 
         SurfaceBasisFunctionsArray<TAllocator> basisFunctions{ static_cast<SurfaceBasisFunctionsAllocator>(allocator) };
         SurfaceBasisDerivativesArray<TAllocator> derivatives{ static_cast<SurfaceBasisFunctionsDerivativesAllocator>(allocator) };
-        SurfacePatchIndexArray<TAllocator> indices{ static_cast<SurfacePatchIndexAllocator>(allocator) };
+        SurfacePatchIndicesArray<TAllocator> indices{ static_cast<SurfacePatchIndexAllocator>(allocator) };
 
         auto u = GetNextKnot(U);
         auto nextU = GetNextKnot(U, u);
@@ -214,6 +223,52 @@ namespace Engine::Nurbs
         }
 
         return { basisFunctions, derivatives, indices };
+    }
+
+    export auto GetSubdivision(
+        const ControlPointsView& controlPoints, 
+        SurfacePatchIndicesView surfacePatchIndices,
+        int currentPatchIndex,
+        float epsilon
+        ) -> std::pair<int, int>
+    {
+        using namespace DirectX;
+        constexpr int degree = 3;
+
+        auto patchIndex = surfacePatchIndices[currentPatchIndex];
+        XMFLOAT4 maxVal{};
+        bool first = true;
+        for (unsigned int i = 0; i < degree; i++)
+        {
+            for (unsigned int j = 0; j < degree; j++)
+            {
+                auto currentVal = controlPoints[std::array{
+                    patchIndex.uvIndex.x - degree + i,
+                    patchIndex.uvIndex.y - degree + j,
+                }];
+                if (first)
+                {
+                    first = false;
+                    maxVal = currentVal;
+                    continue;
+                }
+
+                maxVal = XMFLOAT4{
+                    std::max(maxVal.x, currentVal.x),
+                    std::max(maxVal.y, currentVal.y),
+                    std::max(maxVal.z, currentVal.z),
+                    std::max(maxVal.w, currentVal.w),
+                };
+            }
+        }
+
+        auto len = XMVector4Length(XMLoadFloat4(&maxVal));
+
+        auto val = std::sqrt(XMVectorGetX(len) / (8 * epsilon));
+
+        auto x = std::ceil((patchIndex.maxUV.x - patchIndex.minUV.x) * val);
+        auto y = std::ceil((patchIndex.maxUV.y - patchIndex.minUV.y) * val);
+        return {x, y};
     }
 }
 

@@ -10,4 +10,6 @@ namespace Engine::Nurbs
 
     export auto DifferentiatePolynomial(const DirectX::XMMATRIX& A) noexcept
         -> std::pair<DirectX::XMMATRIX, DirectX::XMMATRIX>;
+
+    export auto EvaluatePolynomial(float u, float v, const DirectX::XMMATRIX& A) noexcept -> float;
 }

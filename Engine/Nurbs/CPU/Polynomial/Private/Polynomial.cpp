@@ -64,5 +64,28 @@ namespace Engine::Nurbs
         derivative_v = XMMatrixTranspose(derivative_v);
         return { derivative_u, derivative_v };
     }
+
+    auto EvaluatePolynomial(float u, float v, const DirectX::XMMATRIX& A) noexcept -> float
+    {
+        DirectX::XMFLOAT4X4 coefficients;
+        XMStoreFloat4x4(&coefficients, A);
+
+        const int degree = 3;
+        float result = 0;
+
+        float uToI = 1;
+        for (int i = 0; i <= degree; i++)
+        {
+            float vToJ = 1;
+            for (int j = 0; j <= degree; j++)
+            {
+                result += coefficients.m[j][i] * uToI * vToJ;
+                vToJ *= v;
+            }
+            uToI *= u;
+        }
+
+        return result;
+    }
 }
 

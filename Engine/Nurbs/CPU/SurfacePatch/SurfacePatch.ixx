@@ -20,7 +20,7 @@ namespace Engine::Nurbs
 
     export struct SurfacePatchIndex
     {
-        DirectX::XMUINT2 index;
+        DirectX::XMUINT2 uvIndex;
         DirectX::XMFLOAT2 minUV;
         DirectX::XMFLOAT2 maxUV;
     };

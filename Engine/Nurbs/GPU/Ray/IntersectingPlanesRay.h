@@ -3,6 +3,7 @@
 #include "Engine/Nurbs/GPU/Math/RationalFunction3D/RationalFunction3D.h"
 #include "Engine/Nurbs/GPU/Constants/RayTracerConstants.h"
 #include "Engine/Nurbs/GPU/Plane/Plane.h"
+#include "Engine/Nurbs/GPU/Ray/Ray.h"
 
 float2 RandomVector()
 {
@@ -19,11 +20,40 @@ namespace Engine
     {
         struct IntersectingPlanesRay
         {
+            static IntersectingPlanesRay FromRay(Ray ray)
+            {
+                Plane p1;
+                Plane p2;
+                float3 absD = abs(ray.D);
+                if (absD.x > absD.y && absD.x > absD.z)
+                {
+                    p1.normal = float3(ray.D.y, -ray.D.x, 0);
+                }
+                else
+                {
+                    p1.normal = float3(0, ray.D.z, -ray.D.y);
+                }
+
+                p1.normal /= length(p1.normal);
+                p2.normal = cross(p1.normal, ray.D);
+
+                p1.offset = -dot(p1.normal, ray.O);
+                p2.offset = -dot(p2.normal, ray.O);
+
+                IntersectingPlanesRay result;
+
+                result.plane1 = p1;
+                result.plane2 = p2;
+                result.O = ray.O;
+                result.D = ray.D;
+                return result;
+            }
+
             float2 DistanceToRoot(float3 position)
             {
                 return float2(
-                    dot(plane1.normal, position) - plane1.offset,
-                    dot(plane2.normal, position) - plane2.offset
+                    dot(plane1.normal, position) + plane1.offset,
+                    dot(plane2.normal, position) + plane2.offset
                 );
             }
 

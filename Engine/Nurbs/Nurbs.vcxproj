@@ -31,6 +31,7 @@
     <ClCompile Include="CPU\SurfacePatch\SurfacePatch.ixx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GPU\AABB\AABB.h" />
     <ClInclude Include="GPU\Constants\CameraData.h" />
     <ClInclude Include="GPU\Constants\NurbsTracingConfiguration.h" />
     <ClInclude Include="GPU\Constants\RationaliserConstants.h" />

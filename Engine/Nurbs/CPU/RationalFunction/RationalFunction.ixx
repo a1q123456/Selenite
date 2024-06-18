@@ -14,6 +14,7 @@ namespace Engine::Nurbs
 
         DirectX::XMMATRIX denominator;
         bool isRational;
+        DirectX::XMINT3 pad;
 
         auto Differentiate() const noexcept -> std::pair<RationalFunction, RationalFunction>
         {
@@ -31,7 +32,24 @@ namespace Engine::Nurbs
             }
 
             return { U, V };
+        }
 
+        auto Evaluate(float u, float v) const noexcept -> DirectX::XMVECTOR
+        {
+            auto x = EvaluatePolynomial(u, v, numeratorX);
+            auto y = EvaluatePolynomial(u, v, numeratorY);
+            auto z = EvaluatePolynomial(u, v, numeratorZ);
+
+            DirectX::XMVECTOR result{x, y, z};
+            if (isRational)
+            {
+                using namespace DirectX;
+                auto scalar = EvaluatePolynomial(u, v, denominator);
+
+                result = result / scalar;
+            }
+
+            return result;
         }
     };
 }

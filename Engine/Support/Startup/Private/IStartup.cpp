@@ -148,21 +148,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
     case WM_LBUTTONDOWN:
         {
+            SetCapture(hWnd);
             Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseDown(Engine::Graphics::MouseButton::Left);
             break;
         }
     case WM_LBUTTONUP:
         {
+            ReleaseCapture();
             Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseUp(Engine::Graphics::MouseButton::Left);
             break;
         }
     case WM_RBUTTONDOWN:
         {
+            SetCapture(hWnd);
             Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseDown(Engine::Graphics::MouseButton::Right);
             break;
         }
     case WM_RBUTTONUP:
     {
+        ReleaseCapture();
         Bootstrap::context->GetGPUScheduler()->GetCurrentRootRenderable()->OnMouseUp(Engine::Graphics::MouseButton::Right);
         break;
     }

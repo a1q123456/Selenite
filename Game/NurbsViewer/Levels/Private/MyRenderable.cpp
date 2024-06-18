@@ -49,9 +49,9 @@ namespace NurbsViewer
         return { pipelineState, rootSignature };
     }
 
-    auto MyRenderable::AllocateWritibleTexture(
+    auto MyRenderable::AllocateWritableTexture(
         int width, int height, DXGI_FORMAT format
-    ) noexcept -> ComPtr<ID3D12Resource>
+    ) const noexcept -> ComPtr<ID3D12Resource>
     {
         ComPtr<ID3D12Resource> resource;
         auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -110,7 +110,7 @@ namespace NurbsViewer
     auto MyRenderable::CreateOutputTextureUAV(
         const ComPtr<ID3D12Resource>& buffer,
         DXGI_FORMAT format,
-        CD3DX12_CPU_DESCRIPTOR_HANDLE& descriptorHandle) noexcept
+        CD3DX12_CPU_DESCRIPTOR_HANDLE& descriptorHandle) const noexcept
     {
         D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
         uavDesc.Format = format;
@@ -191,7 +191,7 @@ namespace NurbsViewer
         CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_rationaliserDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
         CreateUAV(m_surfacePatchesResource, m_surfacePatches, descriptorHandle);
 
-        m_outputTexture = AllocateWritibleTexture(
+        m_outputTexture = AllocateWritableTexture(
             1024,
             768,
             DXGI_FORMAT_B8G8R8A8_UNORM
@@ -231,7 +231,6 @@ namespace NurbsViewer
 
         commandList->ResourceBarrier(1, &barrierToUA);
 
-
         commandList->Close();
 
         co_await ExecuteCommandAsync(std::move(commandList));
@@ -246,8 +245,8 @@ namespace NurbsViewer
         m_iprojectionMatrix = XMMatrixInverse(nullptr, projectionMatrix);
 
 
-        m_nurbsTracingConfiguration.errorThreshold = 0.0000001f;
-        m_nurbsTracingConfiguration.maxIteration = 5;
+        m_nurbsTracingConfiguration.errorThreshold = 0.000000001f;
+        m_nurbsTracingConfiguration.maxIteration = 10;
         m_nurbsTracingConfiguration.seed = 3541;
         m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;
         m_sphericalCoordinates = DirectX::XMVECTOR{
@@ -361,15 +360,12 @@ namespace NurbsViewer
             if (m_mouseLeftDown)
             {
                 m_sphericalCoordinates = DirectX::XMVectorAdd(m_sphericalCoordinates, delta);
-                MoveView();
             }
             else if (m_mouseRightDown)
             {
-                auto origin = XMLoadFloat3(&m_eyeLocation);
-
-                origin = DirectX::XMVectorAdd(origin, delta);
-                XMStoreFloat3(&m_eyeLocation, origin);
+                m_cameraDistance += DirectX::XMVectorGetX(delta);
             }
+            MoveView();
 
         }
         m_mouseX = x;
@@ -405,8 +401,6 @@ namespace NurbsViewer
 
     auto MyRenderable::MoveView() noexcept -> void
     {
-        constexpr float r = 7.0f;
-
         float theta = DirectX::XMVectorGetX(m_sphericalCoordinates);
         float phi = DirectX::XMVectorGetY(m_sphericalCoordinates);
 
@@ -416,9 +410,9 @@ namespace NurbsViewer
         float cosPhi = std::cos(phi);
 
         m_eyeLocation = DirectX::XMFLOAT3{
-                r * sinTheta * cosPhi,
-                r * sinTheta * sinPhi,
-                r * cosTheta
+                m_cameraDistance * sinTheta * cosPhi,
+                m_cameraDistance * sinTheta * sinPhi,
+                m_cameraDistance * cosTheta
         };
 
         auto log = std::format(L"eye location at: [{}, {}, {}]\n",
@@ -512,7 +506,7 @@ namespace NurbsViewer
 
         m_U = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5 };
         m_V = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5 };
-        
+
         m_surfacePatches = Engine::Nurbs::GetNurbsSurfacePatches<Memory::FastLocalAllocator>(
             std::mdspan(m_controlPoints.data(), 8, 8), 
             m_U, 
@@ -524,6 +518,10 @@ namespace NurbsViewer
             m_V,
             Engine::Core::Memory::FastLocalAllocator<int>{&m_resourceHeap}
         );
+
+        GetSubdivision(std::mdspan(m_controlPoints.data(), 8, 8), m_indices, 0, 1);
+
+
         m_rationaliserData.patchesCount = static_cast<UINT>(m_basisFunctions.size());
     }
 }

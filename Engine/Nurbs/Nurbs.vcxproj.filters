@@ -42,6 +42,7 @@
     <ClInclude Include="GPU\Ray\Ray.Decl.h" />
     <ClInclude Include="GPU\Ray\Ray.h" />
     <ClInclude Include="GPU\Constants\RationaliserData.h" />
+    <ClInclude Include="GPU\AABB\AABB.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GPU\RayTracer\RayTracer.hlsl" />
