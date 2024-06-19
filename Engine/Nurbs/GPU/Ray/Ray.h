@@ -1,5 +1,4 @@
 #pragma once
-#include "Engine/Nurbs/GPU/AABB/AABB.h"
 
 namespace Engine
 {
@@ -14,11 +13,6 @@ namespace Engine
                 r.D = D;
 
                 return r;
-            }
-
-            bool IntersectsAABB(AABB boundingBox)
-            {
-                return false;
             }
 
             float3 O;

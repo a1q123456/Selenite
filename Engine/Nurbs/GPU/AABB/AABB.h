@@ -31,6 +31,7 @@ namespace Engine
 
             float4 GetNurbsInitialGuess(Ray ray)
             {
+                return float4(0, 0, 0, 0);
                 // TODO
                 // 1. Calculate the intersection
                 // 2. Project the point onto the plane

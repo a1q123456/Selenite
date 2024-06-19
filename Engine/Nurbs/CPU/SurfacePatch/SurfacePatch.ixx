@@ -16,6 +16,9 @@ namespace Engine::Nurbs
 
         DirectX::XMFLOAT2 minUV;
         DirectX::XMFLOAT2 maxUV;
+
+        DirectX::XMFLOAT2 samplesCount;
+        DirectX::XMFLOAT2 unused;
     };
 
     export struct SurfacePatchIndex

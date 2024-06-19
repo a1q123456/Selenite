@@ -9,7 +9,7 @@ namespace Engine
         {
             float4x4 coefficients;
 
-            float EvaluatePolynomial(float u, float v)
+            float Evaluate(float u, float v)
             {
                 const int degree = 3;
                 float result = 0;

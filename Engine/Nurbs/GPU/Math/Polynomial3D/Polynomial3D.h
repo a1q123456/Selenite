@@ -11,12 +11,12 @@ namespace Engine
             Polynomial y;
             Polynomial z;
 
-            float3 EvaluatePolynomial(float u, float v)
+            float3 Evaluate(float u, float v)
             {
                 return float3(
-                    x.EvaluatePolynomial(u, v),
-                    y.EvaluatePolynomial(u, v),
-                    z.EvaluatePolynomial(u, v)
+                    x.Evaluate(u, v),
+                    y.Evaluate(u, v),
+                    z.Evaluate(u, v)
                 );
             }
 

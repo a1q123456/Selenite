@@ -257,9 +257,7 @@ namespace Engine::Nurbs
             }
         }
 
-        auto len = XMVector4Length(XMLoadFloat4(&maxVal));
-
-        auto val = std::sqrt(XMVectorGetX(len) / (8 * epsilon));
+        auto val = std::sqrt(maxVal / (8 * epsilon));
 
         auto x = std::ceil((patchIndex.maxUV.x - patchIndex.minUV.x) * val);
         auto y = std::ceil((patchIndex.maxUV.y - patchIndex.minUV.y) * val);

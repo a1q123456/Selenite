@@ -58,8 +58,9 @@ namespace Engine
             }
 
             float2x2 InverseJacobianMatrix(
-                Math::RationalFunction3D Su,
-                Math::RationalFunction3D Sv,
+                Math::RationalFunction3D S,
+                Math::RationalFunction3D S_u,
+                Math::RationalFunction3D S_v,
                 inout float2 currentGuess,
                 out float3 suVal, out float3 svVal)
             {
@@ -67,8 +68,12 @@ namespace Engine
                 float2x2 J;
                 for (int i = 0; i < 2; i++)
                 {
-                    suVal = Su.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
-                    svVal = Sv.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
+                    S.EvaluateFirstDerivative(
+                        S_u, 
+                        S_v, 
+                        currentGuess.x, 
+                        currentGuess.y, 
+                        suVal, svVal);
 
                     J = float2x2(
                         dot(plane1.normal, suVal), dot(plane2.normal, suVal),
@@ -94,11 +99,11 @@ namespace Engine
             {
                 t = -1;
                 float2 currentGuess = lerp(nurbsPatch.maxUV, nurbsPatch.minUV, 0.5);
-                float3 Suv = nurbsPatch.nurbsFunction.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
+                float3 s = nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
 
                 float3 su = float3(0, 0, 0);
                 float3 sv = float3(0, 0, 0);
-                float2 distance = DistanceToRoot(Suv);
+                float2 distance = DistanceToRoot(s);
                 float error = -1;
 
                 for (int i = 0; i <= maxIteration; i++)
@@ -107,11 +112,16 @@ namespace Engine
                     {
                         return false;
                     }
-                    float2x2 J = InverseJacobianMatrix(nurbsPatch.partialDerivativeU, nurbsPatch.partialDerivativeV, currentGuess, su, sv);
+                    float2x2 J = InverseJacobianMatrix(
+                        nurbsPatch.nurbsFunction,
+                        nurbsPatch.partialDerivativeU, 
+                        nurbsPatch.partialDerivativeV, 
+                        currentGuess, 
+                        su, sv);
 
                     currentGuess = currentGuess - mul(J, distance);
-                    Suv = nurbsPatch.nurbsFunction.EvaluateRationalFunction(currentGuess.x, currentGuess.y);
-                    distance = DistanceToRoot(Suv);
+                    s = nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
+                    distance = DistanceToRoot(s);
                     float newError = dot(distance, distance);
 
                     if (newError > error && error > 0)
@@ -131,14 +141,14 @@ namespace Engine
                     return false;
                 }
 
-                t = dot(Suv - O, D);
+                t = dot(s - O, D);
                 if (t < 0)
                 {
                     return false;
                 }
 
                 uv = currentGuess;
-                position = Suv;
+                position = s;
                 normal = cross(su, sv);
                 normal /= length(normal);
                 return true;
