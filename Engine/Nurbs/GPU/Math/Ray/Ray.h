@@ -2,7 +2,7 @@
 
 namespace Engine
 {
-    namespace NurbsRayTracer
+    namespace Math
     {
         struct Ray
         {

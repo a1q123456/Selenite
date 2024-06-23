@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Nurbs/GPU/Ray/Ray.h"
+#include "Engine/Nurbs/GPU/Math/Ray/Ray.h"
 
 namespace Engine
 {
@@ -7,35 +7,40 @@ namespace Engine
     {
         struct AABB
         {
-            float2 aUV;
-            float2 bUV;
-            float2 cUV;
-            float2 dUV;
+            float4 minPosition;
+            float4 maxPosition;
 
-            float4 vertices[4];
-
-            uint minIndex;
-            uint maxIndex;
-            uint nurbsPatchIndex;
-            uint pad;
-
-            float4 GetMin()
+            void Initialise()
             {
-                return vertices[minIndex];
+                minPosition = float4(0, 0, 0, 0);
+                maxPosition = float4(0, 0, 0, 0);
             }
 
-            float4 GetMax()
+            bool TryIntersect(in Math::Ray ray, out float3 intersection)
             {
-                return vertices[maxIndex];
-            }
+                intersection = float3(0, 0, 0);
+                float3 tMin = (float3)minPosition - ray.O / ray.D;
+                float3 tMax = (float3)maxPosition - ray.O / ray.D;
 
-            float4 GetNurbsInitialGuess(Ray ray)
-            {
-                return float4(0, 0, 0, 0);
-                // TODO
-                // 1. Calculate the intersection
-                // 2. Project the point onto the plane
-                // 3. Use bi-linear interpolation to obtain the initial guess
+                float tmin = max(max(min(tMin.x, tMax.x), min(tMin.y, tMax.y)), min(tMin.z, tMax.z));
+                float tmax = min(min(max(tMin.x, tMax.x), max(tMin.y, tMax.y)), max(tMin.z, tMax.z));
+
+                if (tmax < 0) {
+                    return false;
+                }
+
+                if (tmin > tmax) {
+                    return false;
+                }
+
+                if (tmin < 0) {
+                    intersection = tmax * ray.D + ray.O;
+                }
+                else
+                {
+                    intersection = tmin * ray.D + ray.O;
+                }
+                return true;
             }
         };
     }

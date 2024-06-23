@@ -1,9 +1,9 @@
 #pragma once
-#include "Engine/Nurbs/GPU/Math/NurbsPatch/NurbsPatch.h"
 #include "Engine/Nurbs/GPU/Math/BasisFunction/BasisFunction.h"
 #include "Engine/Nurbs/GPU/Math/BasisFunctionDerivative/BasisFunctionDerivative.h"
 #include "Engine/Nurbs/GPU/Math/NurbsPatchIndex/NurbsPatchIndex.h"
 #include "Engine/Nurbs/GPU/Constants/RationaliserData.h"
+#include "Engine/Nurbs/GPU/TraceableSurface/TraceableSurface.h"
 
 Engine::Rendering::RationaliserData rationaliserData : register(b0);
 StructuredBuffer<Engine::Math::BasisFunction> basisFunctions : register(t0);
@@ -11,7 +11,7 @@ StructuredBuffer<Engine::Math::BasisFunctionDerivative> basisFunctionDerivatives
 StructuredBuffer<Engine::Math::NurbsPatchIndex> nurbsPatchIndex : register(t2);
 StructuredBuffer<float4> controlPoints : register(t3);
 
-RWStructuredBuffer<Engine::Math::NurbsPatch> nurbsPatches : register(u0);
+RWStructuredBuffer<Engine::NurbsRayTracer::TraceableSurface> traceablePatches : register(u0);
 
 
 #define NurbsRationaliserRS \

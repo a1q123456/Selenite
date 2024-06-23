@@ -1,13 +1,12 @@
 #pragma once
 #include "Engine/Nurbs/GPU/Math/NurbsPatch/NurbsPatch.h"
-#include "Engine/Nurbs/GPU/Math/RationalFunction3D/RationalFunction3D.h"
-#include "Engine/Nurbs/GPU/Constants/RayTracerConstants.h"
-#include "Engine/Nurbs/GPU/Plane/Plane.h"
-#include "Engine/Nurbs/GPU/Ray/Ray.h"
+#include "Engine/Nurbs/GPU/AABB/AABB.h"
+#include "Engine/Nurbs/GPU/Math/Ray/IntersectingPlanesRay.h"
+#include "Engine/Nurbs/GPU/Math/QuadApproximation/QuadApproximation.h"
 
-float2 RandomVector()
+float2 RandomVector(uint seed)
 {
-    uint value = nurbsTracingConfiguration.seed * 1103515245 + 12345;
+    uint value = seed * 1103515245 + 12345;
     uint x = (value / 65536) % 32768;
     value = value * 1103515245 + 12345;
     uint y = (value / 65536) % 32768;
@@ -18,46 +17,30 @@ namespace Engine
 {
     namespace NurbsRayTracer
     {
-        struct IntersectingPlanesRay
+        struct TraceableSurface
         {
-            static IntersectingPlanesRay FromRay(Ray ray)
+            Math::NurbsPatch nurbsPatch;
+            AABB boundingBox;
+            Math::QuadApproximation approximation;
+
+            void Initialise()
             {
-                Plane p1;
-                Plane p2;
-                float3 absD = abs(ray.D);
-                if (absD.x > absD.y && absD.x > absD.z)
-                {
-                    p1.normal = float3(ray.D.y, -ray.D.x, 0);
-                }
-                else
-                {
-                    p1.normal = float3(0, ray.D.z, -ray.D.y);
-                }
-
-                p1.normal /= length(p1.normal);
-                p2.normal = cross(p1.normal, ray.D);
-
-                p1.offset = -dot(p1.normal, ray.O);
-                p2.offset = -dot(p2.normal, ray.O);
-
-                IntersectingPlanesRay result;
-
-                result.plane1 = p1;
-                result.plane2 = p2;
-                result.O = ray.O;
-                result.D = ray.D;
-                return result;
+                nurbsPatch.Initialise();
+                boundingBox.Initialise();
+                approximation.Initialise();
             }
 
-            float2 DistanceToRoot(float3 position)
+            float2 DistanceToRoot(in Math::IntersectingPlanesRay ray, float3 position)
             {
                 return float2(
-                    dot(plane1.normal, position) + plane1.offset,
-                    dot(plane2.normal, position) + plane2.offset
+                    dot(ray.plane1.normal, position) + ray.plane1.offset,
+                    dot(ray.plane2.normal, position) + ray.plane2.offset
                 );
             }
 
             float2x2 InverseJacobianMatrix(
+                in Math::IntersectingPlanesRay ray,
+                uint seed,
                 Math::RationalFunction3D S,
                 Math::RationalFunction3D S_u,
                 Math::RationalFunction3D S_v,
@@ -69,20 +52,20 @@ namespace Engine
                 for (int i = 0; i < 2; i++)
                 {
                     S.EvaluateFirstDerivative(
-                        S_u, 
-                        S_v, 
-                        currentGuess.x, 
-                        currentGuess.y, 
+                        S_u,
+                        S_v,
+                        currentGuess.x,
+                        currentGuess.y,
                         suVal, svVal);
 
                     J = float2x2(
-                        dot(plane1.normal, suVal), dot(plane2.normal, suVal),
-                        dot(plane1.normal, svVal), dot(plane2.normal, svVal)
+                        dot(ray.plane1.normal, suVal), dot(ray.plane2.normal, suVal),
+                        dot(ray.plane1.normal, svVal), dot(ray.plane2.normal, svVal)
                     );
                     det = determinant(J);
                     if (det == 0)
                     {
-                        currentGuess += RandomVector();
+                        currentGuess += RandomVector(seed);
                     }
                     else
                     {
@@ -92,18 +75,29 @@ namespace Engine
 
                 return float2x2(
                     J._m11, -J._m10,
-                    -J._m01 , J._m00) / det;
+                    -J._m01, J._m00) / det;
             }
 
-            bool TraceRay(Math::NurbsPatch nurbsPatch, float errorTolerance, int maxIteration, out float2 uv, out float3 position, out float3 normal, out float t)
+            bool TraceRay(
+                in Math::IntersectingPlanesRay ray,
+                uint seed,
+                float errorTolerance, int maxIteration, 
+                out float2 uv, out float3 position, out float3 normal, out float t)
             {
                 t = -1;
-                float2 currentGuess = lerp(nurbsPatch.maxUV, nurbsPatch.minUV, 0.5);
+
+                float3 aabbIntersection;
+                if (!boundingBox.TryIntersect(ray.baseRay, aabbIntersection))
+                {
+                    return false;
+                }
+
+                float2 currentGuess = approximation.GetInitialGuess(aabbIntersection);
                 float3 s = nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
 
                 float3 su = float3(0, 0, 0);
                 float3 sv = float3(0, 0, 0);
-                float2 distance = DistanceToRoot(s);
+                float2 distance = DistanceToRoot(ray, s);
                 float error = -1;
 
                 for (int i = 0; i <= maxIteration; i++)
@@ -113,15 +107,17 @@ namespace Engine
                         return false;
                     }
                     float2x2 J = InverseJacobianMatrix(
+                        ray,
+                        seed,
                         nurbsPatch.nurbsFunction,
-                        nurbsPatch.partialDerivativeU, 
-                        nurbsPatch.partialDerivativeV, 
-                        currentGuess, 
+                        nurbsPatch.partialDerivativeU,
+                        nurbsPatch.partialDerivativeV,
+                        currentGuess,
                         su, sv);
 
                     currentGuess = currentGuess - mul(J, distance);
                     s = nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
-                    distance = DistanceToRoot(s);
+                    distance = DistanceToRoot(ray, s);
                     float newError = dot(distance, distance);
 
                     if (newError > error && error > 0)
@@ -136,12 +132,12 @@ namespace Engine
                     }
                 }
 
-                if (any(currentGuess > nurbsPatch.maxUV) || any(currentGuess < nurbsPatch.minUV))
+                if (any(currentGuess > approximation.uv[0]) || any(currentGuess < approximation.uv[3]))
                 {
                     return false;
                 }
 
-                t = dot(s - O, D);
+                t = dot(s - ray.baseRay.O, ray.baseRay.D);
                 if (t < 0)
                 {
                     return false;
@@ -154,10 +150,6 @@ namespace Engine
                 return true;
             }
 
-            Plane plane1;
-            Plane plane2;
-            float3 O;
-            float3 D;
         };
     }
 }

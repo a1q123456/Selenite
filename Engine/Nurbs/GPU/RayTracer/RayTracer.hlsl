@@ -2,19 +2,14 @@
 #include "Engine/Nurbs/GPU/Constants/NurbsTracingConfiguration.h"
 #include "Engine/Nurbs/GPU/Constants/RayTracerConstants.h"
 
-#include "Engine/Nurbs/GPU/Ray/Ray.h"
-#include "Engine/Nurbs/GPU/Ray/IntersectingPlanesRay.h"
+#include "Engine/Nurbs/GPU/Math/Ray/Ray.h"
+#include "Engine/Nurbs/GPU/Math/Ray/IntersectingPlanesRay.h"
 
 [RootSignature(NurbsRaytracerRS)]
 [numthreads(8, 8, 1)]
 void main(uint3 tid : SV_DispatchThreadID)
 {
     uint2 coordinate = tid.xy;
-
-    //if (coordinate.x > 700 || coordinate.y > 500 || coordinate.x < 400 || coordinate.y < 200)
-    //{
-    //    return;
-    //}
 
     float2 ndc = float2(coordinate) / float2(cameraData.outputSize) - float2(0.5, 0.5);
     ndc *= float2(1, -1);
@@ -23,10 +18,10 @@ void main(uint3 tid : SV_DispatchThreadID)
 
     direction /= length(direction);
 
-    Engine::NurbsRayTracer::Ray ray = Engine::NurbsRayTracer::Ray::MakeRay(cameraData.origin.xyz,
+    Engine::Math::Ray ray = Engine::Math::Ray::MakeRay(cameraData.origin.xyz,
         direction);
 
-    Engine::NurbsRayTracer::IntersectingPlanesRay intersectingRay = Engine::NurbsRayTracer::IntersectingPlanesRay::FromRay(ray);
+    Engine::Math::IntersectingPlanesRay intersectingRay = Engine::Math::IntersectingPlanesRay::FromRay(ray);
 
     float minDistance = -1;
     for (int i = 0; i < nurbsTracingConfiguration.patchesCount; i++)
@@ -35,9 +30,9 @@ void main(uint3 tid : SV_DispatchThreadID)
         float3 position = float3(0, 0, 0);
         float3 normal = float3(0, 0, 0);
         float distance = 0;
-
-        if (intersectingRay.TraceRay(
-                nurbsPatches[i], 
+        if (traceablePatches[i].TraceRay(
+                intersectingRay,
+                nurbsTracingConfiguration.seed,
                 nurbsTracingConfiguration.errorThreshold, 
                 nurbsTracingConfiguration.maxIteration, 
                 uv, position, normal, distance))

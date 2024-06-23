@@ -1,11 +1,11 @@
 #pragma once
-#include "CameraData.h"
-#include "NurbsTracingConfiguration.h"
-#include "Engine/Nurbs/GPU/Math/NurbsPatch/NurbsPatch.h"
+#include "Engine/Nurbs/GPU/Constants/CameraData.h"
+#include "Engine/Nurbs/GPU/Constants/NurbsTracingConfiguration.h"
+#include "Engine/Nurbs/GPU/TraceableSurface/TraceableSurface.h"
 
 ConstantBuffer<Engine::Rendering::CameraData> cameraData : register(b0);
 ConstantBuffer<Engine::Rendering::NurbsTracingConfiguration> nurbsTracingConfiguration : register(b1);
-StructuredBuffer<Engine::Math::NurbsPatch> nurbsPatches : register(t0);
+StructuredBuffer<Engine::NurbsRayTracer::TraceableSurface> traceablePatches : register(t0);
 RWTexture2D<float4> renderTarget : register(u0);
 
 #define NurbsRaytracerRS \

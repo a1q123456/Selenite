@@ -15,7 +15,7 @@ namespace NurbsViewer
         m_controlPoints(&m_resourceHeap),
         m_U(&m_resourceHeap),
         m_V(&m_resourceHeap),
-        m_surfacePatches(&m_resourceHeap),
+        m_traceablePatches(&m_resourceHeap),
         m_basisFunctions(&m_resourceHeap),
         m_derivatives(&m_resourceHeap),
         m_indices(&m_resourceHeap)
@@ -53,6 +53,7 @@ namespace NurbsViewer
         int width, int height, DXGI_FORMAT format
     ) const noexcept -> ComPtr<ID3D12Resource>
     {
+        constexpr auto c = sizeof(TraceableSurface);
         ComPtr<ID3D12Resource> resource;
         auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
         auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
@@ -173,10 +174,10 @@ namespace NurbsViewer
             D3D12_RESOURCE_FLAG_NONE,
             D3D12_RESOURCE_STATE_COPY_SOURCE | D3D12_RESOURCE_STATE_GENERIC_READ);
 
-        m_surfacePatches.resize(m_basisFunctions.size());
+        m_traceablePatches.resize(m_basisFunctions.size());
 
         m_surfacePatchesResource = AllocateStructuredBuffer(
-            m_surfacePatches, 
+            m_traceablePatches,
             D3D12_HEAP_TYPE_DEFAULT,
             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -189,7 +190,7 @@ namespace NurbsViewer
         ThrowIfFailed(GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(m_rationaliserDescriptorHeap.ReleaseAndGetAddressOf())));
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_rationaliserDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-        CreateUAV(m_surfacePatchesResource, m_surfacePatches, descriptorHandle);
+        CreateUAV(m_surfacePatchesResource, m_traceablePatches, descriptorHandle);
 
         m_outputTexture = AllocateWritableTexture(
             1024,
@@ -507,20 +508,11 @@ namespace NurbsViewer
         m_U = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5 };
         m_V = { 0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5 };
 
-        m_surfacePatches = Engine::Nurbs::GetNurbsSurfacePatches<Memory::FastLocalAllocator>(
-            std::mdspan(m_controlPoints.data(), 8, 8), 
-            m_U, 
-            m_V, 
-            &m_resourceHeap);
-
         std::tie(m_basisFunctions, m_derivatives, m_indices) = GetNurbsSurfaceFunctions(
             m_U,
             m_V,
             Engine::Core::Memory::FastLocalAllocator<int>{&m_resourceHeap}
         );
-
-        GetSubdivision(std::mdspan(m_controlPoints.data(), 8, 8), m_indices, 0, 1);
-
 
         m_rationaliserData.patchesCount = static_cast<UINT>(m_basisFunctions.size());
     }

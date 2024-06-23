@@ -22,6 +22,8 @@ namespace Engine::Nurbs
     export template <template<typename> typename TAllocator>
         using SurfacePatchIndicesArray = std::vector<SurfacePatchIndex, TAllocator<SurfacePatchIndex>>;
 
+    export using SurfaceBasisFunctionsView = std::span<SurfaceBasisFunctions>;
+    export using SurfaceBasisDerivativesView = std::span<SurfaceBasisFunctions>;
     export using SurfacePatchIndicesView = std::span<SurfacePatchIndex>;
 
     export using KnotVector = std::span<float>;
@@ -223,45 +225,6 @@ namespace Engine::Nurbs
         }
 
         return { basisFunctions, derivatives, indices };
-    }
-
-    export auto GetSubdivision(
-        const ControlPointsView& controlPoints, 
-        SurfacePatchIndicesView surfacePatchIndices,
-        int currentPatchIndex,
-        float epsilon
-        ) -> std::pair<int, int>
-    {
-        using namespace DirectX;
-        constexpr int degree = 3;
-
-        auto patchIndex = surfacePatchIndices[currentPatchIndex];
-        float maxVal = 0;
-        bool first = true;
-        for (unsigned int i = 0; i < degree; i++)
-        {
-            for (unsigned int j = 0; j < degree; j++)
-            {
-                auto currentVal = controlPoints[std::array{
-                    patchIndex.uvIndex.x - degree + i,
-                    patchIndex.uvIndex.y - degree + j,
-                }];
-                if (first)
-                {
-                    first = false;
-                    maxVal = XMVectorGetX(XMVector4Length(XMLoadFloat4(&currentVal)));
-                    continue;
-                }
-
-                maxVal = std::max(maxVal, XMVectorGetX(XMVector4Length(XMLoadFloat4(&currentVal))));
-            }
-        }
-
-        auto val = std::sqrt(maxVal / (8 * epsilon));
-
-        auto x = std::ceil((patchIndex.maxUV.x - patchIndex.minUV.x) * val);
-        auto y = std::ceil((patchIndex.maxUV.y - patchIndex.minUV.y) * val);
-        return {x, y};
     }
 }
 

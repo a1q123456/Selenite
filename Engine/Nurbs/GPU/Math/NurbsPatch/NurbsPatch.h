@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine/Nurbs/GPU/Math/RationalFunction3D/RationalFunction3D.h"
-#include "Engine/Nurbs/GPU/AABB/AABB.h"
 
 namespace Engine
 {
@@ -12,21 +11,11 @@ namespace Engine
             RationalFunction3D partialDerivativeU;
             RationalFunction3D partialDerivativeV;
 
-            float2 minUV;
-            float2 maxUV;
-
-            uint2 samplesCount;
-            uint2 unused;
-
             void Initialise()
             {
                 nurbsFunction.Initialise();
                 partialDerivativeU.Initialise();
                 partialDerivativeV.Initialise();
-
-                minUV = float2(0, 0);
-                maxUV = float2(0, 0);
-                samplesCount = uint2(0, 0);
             }
         };
     }

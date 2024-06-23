@@ -12,6 +12,7 @@ import Engine.Nurbs.BasisFunction;
 import Engine.Nurbs.GPUInterop.RationaliserData;
 import Engine.Nurbs.GPUInterop.CameraData;
 import Engine.Nurbs.GPUInterop.NurbsTracingConfiguration;
+import Engine.Nurbs.TraceableSurface;
 import std;
 
 using namespace Microsoft::WRL;
@@ -78,7 +79,7 @@ namespace NurbsViewer
 
         Memory::FastHeapVector<float> m_U;
         Memory::FastHeapVector<float> m_V;
-        Memory::FastHeapVector<SurfacePatch> m_surfacePatches;
+        Memory::FastHeapVector<TraceableSurface> m_traceablePatches;
         SurfaceBasisFunctionsArray<Memory::FastLocalAllocator> m_basisFunctions;
         SurfaceBasisDerivativesArray<Memory::FastLocalAllocator> m_derivatives;
         SurfacePatchIndicesArray<Memory::FastLocalAllocator> m_indices;

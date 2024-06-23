@@ -2,7 +2,7 @@ module;
 #include <DirectXMath.h>
 module Engine.Nurbs.BasisFunction;
 import Engine.Nurbs.Polynomial;
-
+import std;
 
 namespace Engine::Nurbs
 {

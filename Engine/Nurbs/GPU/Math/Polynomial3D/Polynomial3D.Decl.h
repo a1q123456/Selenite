@@ -1,6 +1,9 @@
 #pragma once
 
-namespace Engine::Math
+namespace Engine
 {
-    class Polynomial3D;
+    namespace Math
+    {
+        class Polynomial3D;
+    }
 }
