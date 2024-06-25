@@ -16,29 +16,32 @@ namespace Engine
                 maxPosition = float4(0, 0, 0, 0);
             }
 
-            bool TryIntersect(in Math::Ray ray, out float3 intersection)
+            bool TryIntersect(in Math::Ray ray, out float t)
             {
-                intersection = float3(0, 0, 0);
-                float3 tMin = (float3)minPosition - ray.O / ray.D;
-                float3 tMax = (float3)maxPosition - ray.O / ray.D;
+                t = -1;
+                float3 tMin = ((float3)minPosition - ray.O) / ray.D;
+                float3 tMax = ((float3)maxPosition - ray.O) / ray.D;
 
                 float tmin = max(max(min(tMin.x, tMax.x), min(tMin.y, tMax.y)), min(tMin.z, tMax.z));
                 float tmax = min(min(max(tMin.x, tMax.x), max(tMin.y, tMax.y)), max(tMin.z, tMax.z));
 
-                if (tmax < 0) {
+                if (tmax < 0)
+                {
                     return false;
                 }
 
-                if (tmin > tmax) {
+                if (tmin > tmax)
+                {
                     return false;
                 }
 
-                if (tmin < 0) {
-                    intersection = tmax * ray.D + ray.O;
+                if (tmin < 0)
+                {
+                    t = tmax;
                 }
                 else
                 {
-                    intersection = tmin * ray.D + ray.O;
+                    t = tmin;
                 }
                 return true;
             }

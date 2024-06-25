@@ -30,7 +30,7 @@ namespace Engine
                 approximation.Initialise();
             }
 
-            float2 DistanceToRoot(in Math::IntersectingPlanesRay ray, float3 position)
+            static float2 DistanceToRoot(in Math::IntersectingPlanesRay ray, float3 position)
             {
                 return float2(
                     dot(ray.plane1.normal, position) + ray.plane1.offset,
@@ -38,7 +38,7 @@ namespace Engine
                 );
             }
 
-            float2x2 InverseJacobianMatrix(
+            static float2x2 InverseJacobianMatrix(
                 in Math::IntersectingPlanesRay ray,
                 uint seed,
                 Math::RationalFunction3D S,
@@ -78,22 +78,25 @@ namespace Engine
                     -J._m01, J._m00) / det;
             }
 
-            bool TraceRay(
+            static bool TraceAABB(
                 in Math::IntersectingPlanesRay ray,
+                in TraceableSurface surface, 
+                out float t)
+            {
+                return surface.boundingBox.TryIntersect(ray.baseRay, t);
+            }
+
+            static bool TraceRay(
+                in Math::IntersectingPlanesRay ray,
+                in TraceableSurface surface,
                 uint seed,
                 float errorTolerance, int maxIteration, 
-                out float2 uv, out float3 position, out float3 normal, out float t)
+                out float2 uv, out float3 position, out float3 normal, inout float t)
             {
-                t = -1;
+                float3 aabbIntersection = ray.baseRay.D * t + ray.baseRay.O;
 
-                float3 aabbIntersection;
-                if (!boundingBox.TryIntersect(ray.baseRay, aabbIntersection))
-                {
-                    return false;
-                }
-
-                float2 currentGuess = approximation.GetInitialGuess(aabbIntersection);
-                float3 s = nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
+                float2 currentGuess = surface.approximation.GetInitialGuess(aabbIntersection);
+                float3 s = surface.nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
 
                 float3 su = float3(0, 0, 0);
                 float3 sv = float3(0, 0, 0);
@@ -109,14 +112,14 @@ namespace Engine
                     float2x2 J = InverseJacobianMatrix(
                         ray,
                         seed,
-                        nurbsPatch.nurbsFunction,
-                        nurbsPatch.partialDerivativeU,
-                        nurbsPatch.partialDerivativeV,
+                        surface.nurbsPatch.nurbsFunction,
+                        surface.nurbsPatch.partialDerivativeU,
+                        surface.nurbsPatch.partialDerivativeV,
                         currentGuess,
                         su, sv);
 
                     currentGuess = currentGuess - mul(J, distance);
-                    s = nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
+                    s = surface.nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
                     distance = DistanceToRoot(ray, s);
                     float newError = dot(distance, distance);
 
@@ -132,7 +135,7 @@ namespace Engine
                     }
                 }
 
-                if (any(currentGuess > approximation.uv[0]) || any(currentGuess < approximation.uv[3]))
+                if (any(currentGuess > surface.approximation.uv[3]) || any(currentGuess < surface.approximation.uv[0]))
                 {
                     return false;
                 }

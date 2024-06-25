@@ -23,6 +23,7 @@ void main(uint3 tid : SV_DispatchThreadID)
 
     Engine::Math::IntersectingPlanesRay intersectingRay = Engine::Math::IntersectingPlanesRay::FromRay(ray);
 
+    uint patchIndex = -1;
     float minDistance = -1;
     for (int i = 0; i < nurbsTracingConfiguration.patchesCount; i++)
     {
@@ -30,22 +31,29 @@ void main(uint3 tid : SV_DispatchThreadID)
         float3 position = float3(0, 0, 0);
         float3 normal = float3(0, 0, 0);
         float distance = 0;
-        if (traceablePatches[i].TraceRay(
-                intersectingRay,
-                nurbsTracingConfiguration.seed,
-                nurbsTracingConfiguration.errorThreshold, 
-                nurbsTracingConfiguration.maxIteration, 
-                uv, position, normal, distance))
+
+        if (Engine::NurbsRayTracer::TraceableSurface::TraceAABB(
+            intersectingRay,
+            traceablePatches[i],
+            distance))
         {
-            if (minDistance > 0 && distance >= minDistance)
+            if (Engine::NurbsRayTracer::TraceableSurface::TraceRay(
+                intersectingRay,
+                traceablePatches[i],
+                nurbsTracingConfiguration.seed,
+                nurbsTracingConfiguration.errorThreshold,
+                nurbsTracingConfiguration.maxIteration,
+                uv, position, normal, distance))
             {
-                continue;
+                if (minDistance > 0 && distance >= minDistance)
+                {
+                    continue;
+                }
+                minDistance = distance;
+                // TODO coloring, texturing, etc.
+                renderTarget[coordinate] = float4(uv / 5.0f, 1, 1);
             }
-            minDistance = distance;
-            // TODO coloring, texturing, etc.
-            renderTarget[coordinate] = float4(uv / 5.0f, 1, 1);
         }
     }
-
 }
 

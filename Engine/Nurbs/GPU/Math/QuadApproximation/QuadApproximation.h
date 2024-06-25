@@ -25,39 +25,20 @@ namespace Engine
 
             float2 GetInitialGuess(float3 aabbIntersection)
             {
-                float3 position = plane.Project(aabbIntersection);
+                //return lerp(uv[0], uv[3], 0.5);
+                float3 p = plane.Project(aabbIntersection);
 
-                float3 p0 = (float3)positions[0];
-                float3 p1 = (float3)positions[1];
-                float3 p2 = (float3)positions[2];
+                float3 a = (float3)positions[0];
+                float3 b = (float3)positions[1];
+                float3 c = (float3)positions[2];
 
-                // Vectors for bilinear interpolation
-                float3 v0 = p1 - p0;
-                float3 v1 = p2 - p0;
-                float3 v2 = position - p0;
+                float3 pa = p - a;
 
-                // Calculate dot products
-                float d00 = dot(v0, v0);
-                float d01 = dot(v0, v1);
-                float d11 = dot(v1, v1);
-                float d20 = dot(v2, v0);
-                float d21 = dot(v2, v1);
+                float x = dot(pa, normalize(b - a));
+                float y = dot(pa, normalize(c - a));
 
-                // Calculate denominators
-                float denom = d00 * d11 - d01 * d01;
-
-                // Calculate barycentric coordinates
-                float v = (d11 * d20 - d01 * d21) / denom;
-                float w = (d00 * d21 - d01 * d20) / denom;
-                float u = 1.0f - v - w;
-
-                float2 uv0 = uv[0];
-                float2 uv1 = uv[1];
-                float2 uv2 = uv[2];
-                float2 uv3 = uv[3];
-
-                float2 initialGuess = uv0 * u + uv1 * v + uv2 * w + uv3 * (1.0f - u - v - w);
-                return initialGuess;
+                //return coordinates;
+                return float2(lerp(uv[0].x, uv[1].x, x), lerp(uv[0].y, uv[2].y, y));
             }
         };
     }

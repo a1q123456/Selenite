@@ -123,6 +123,7 @@ void main(uint3 tid : SV_DispatchThreadID)
         {
             minPosition = position;
             maxPosition = position;
+            isFirst = false;
         }
         else
         {
@@ -161,7 +162,6 @@ void main(uint3 tid : SV_DispatchThreadID)
 
             float3 projectedPoint = traceablePatches[index].approximation.plane.normal * distance;
 
-            
             minPosition = float3(
                 min(minPosition.x, projectedPoint.x),
                 min(minPosition.y, projectedPoint.y),
@@ -174,7 +174,7 @@ void main(uint3 tid : SV_DispatchThreadID)
             );
         }
     }
-    traceablePatches[index].boundingBox.minPosition = float4(minPosition, 0);
-    traceablePatches[index].boundingBox.maxPosition = float4(maxPosition, 0);
+    traceablePatches[index].boundingBox.minPosition = float4(minPosition, 1) - float4(0.1, 0.1, 0.1, 0);
+    traceablePatches[index].boundingBox.maxPosition = float4(maxPosition, 1) + float4(0.1, 0.1, 0.1, 0);
 }
 
