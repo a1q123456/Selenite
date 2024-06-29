@@ -246,7 +246,7 @@ namespace NurbsViewer
         m_iprojectionMatrix = XMMatrixInverse(nullptr, projectionMatrix);
 
 
-        m_nurbsTracingConfiguration.errorThreshold = 0.000000001f;
+        m_nurbsTracingConfiguration.errorThreshold = 1e-5;
         m_nurbsTracingConfiguration.maxIteration = 10;
         m_nurbsTracingConfiguration.seed = 3541;
         m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;

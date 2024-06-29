@@ -1,6 +1,5 @@
 #pragma once
 #include "Engine/Nurbs/GPU/Math/Plane/Plane.h"
-#include "Engine/Nurbs/GPU/Math/Ray/Ray.h"
 
 namespace Engine
 {
@@ -25,7 +24,7 @@ namespace Engine
 
             float2 GetInitialGuess(float3 aabbIntersection)
             {
-                //return lerp(uv[0], uv[3], 0.5);
+                return lerp(uv[0], uv[3], 0.5);
                 float3 p = plane.Project(aabbIntersection);
 
                 float3 a = (float3)positions[0];

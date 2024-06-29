@@ -134,7 +134,7 @@ namespace Engine::Nurbs
 
                 auto [derivativeU, derivativeV] = nurbsFunction.Differentiate();
 
-                result.emplace_back(nurbsFunction, derivativeU, derivativeV, minUV, maxUV);
+                result.emplace_back(nurbsFunction, derivativeU, derivativeV);
 
                 v = nextV;
                 nextV = GetNextKnot(V, v);

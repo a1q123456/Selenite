@@ -14,7 +14,6 @@ void main(uint3 tid : SV_DispatchThreadID)
     float2 ndc = float2(coordinate) / float2(cameraData.outputSize) - float2(0.5, 0.5);
     ndc *= float2(1, -1);
     float3 direction = mul(cameraData.iProjMatrix, float4(ndc.xy, 0.0, 0.01)).xyz;
-    renderTarget[coordinate] = float4(0, 0, 0, 0);
 
     direction /= length(direction);
 
@@ -25,7 +24,8 @@ void main(uint3 tid : SV_DispatchThreadID)
 
     uint patchIndex = -1;
     float minDistance = -1;
-    for (int i = 0; i < nurbsTracingConfiguration.patchesCount; i++)
+    float4 finalColour = float4(0, 0, 0, 0);
+    for (uint i = 0; i < nurbsTracingConfiguration.patchesCount; i++)
     {
         float2 uv = float2(0, 0);
         float3 position = float3(0, 0, 0);
@@ -37,6 +37,8 @@ void main(uint3 tid : SV_DispatchThreadID)
             traceablePatches[i],
             distance))
         {
+            //renderTarget[coordinate] = float4(1, 1, 1, 1);
+            //return;
             if (Engine::NurbsRayTracer::TraceableSurface::TraceRay(
                 intersectingRay,
                 traceablePatches[i],
@@ -45,15 +47,17 @@ void main(uint3 tid : SV_DispatchThreadID)
                 nurbsTracingConfiguration.maxIteration,
                 uv, position, normal, distance))
             {
-                if (minDistance > 0 && distance >= minDistance)
+                if (minDistance != -1 && distance >= minDistance)
                 {
                     continue;
                 }
                 minDistance = distance;
                 // TODO coloring, texturing, etc.
-                renderTarget[coordinate] = float4(uv / 5.0f, 1, 1);
+                finalColour = float4(uv / 5.0f, 1, 1);
             }
         }
     }
+
+    renderTarget[coordinate] = finalColour;
 }
 

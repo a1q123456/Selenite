@@ -86,6 +86,11 @@ namespace Engine
                 return surface.boundingBox.TryIntersect(ray.baseRay, t);
             }
 
+            //static double MyDot(double2 a, double2 b)
+            //{
+            //    return a.x * b.x + a.y * b.y;
+            //}
+
             static bool TraceRay(
                 in Math::IntersectingPlanesRay ray,
                 in TraceableSurface surface,
@@ -93,9 +98,15 @@ namespace Engine
                 float errorTolerance, int maxIteration, 
                 out float2 uv, out float3 position, out float3 normal, inout float t)
             {
+                uv = float2(0, 0);
+                position = float3(0, 0, 0);
+                normal = float3(0, 0, 0);
+                t = -1;
+
                 float3 aabbIntersection = ray.baseRay.D * t + ray.baseRay.O;
 
                 float2 currentGuess = surface.approximation.GetInitialGuess(aabbIntersection);
+
                 float3 s = surface.nurbsPatch.nurbsFunction.Evaluate(currentGuess.x, currentGuess.y);
 
                 float3 su = float3(0, 0, 0);
@@ -123,10 +134,10 @@ namespace Engine
                     distance = DistanceToRoot(ray, s);
                     float newError = dot(distance, distance);
 
-                    if (newError > error && error > 0)
-                    {
-                        return false;
-                    }
+                    //if (newError > error && error > 0)
+                    //{
+                    //    return false;
+                    //}
                     error = newError;
 
                     if (error <= errorTolerance)

@@ -158,23 +158,23 @@ void main(uint3 tid : SV_DispatchThreadID)
 
             float4 controlPoint = controlPoints[controlPointsIndex.x * rationaliserData.controlPointsStride + controlPointsIndex.y];
 
-            float distance = dot((float3) controlPoint, traceablePatches[index].approximation.plane.normal);
+            //float distance = dot((float3) controlPoint, traceablePatches[index].approximation.plane.normal);
 
-            float3 projectedPoint = traceablePatches[index].approximation.plane.normal * distance;
+            //float3 projectedPoint = traceablePatches[index].approximation.plane.normal * distance;
 
             minPosition = float3(
-                min(minPosition.x, projectedPoint.x),
-                min(minPosition.y, projectedPoint.y),
-                min(minPosition.z, projectedPoint.z)
+                min(minPosition.x, controlPoint.x),
+                min(minPosition.y, controlPoint.y),
+                min(minPosition.z, controlPoint.z)
             );
             maxPosition = float3(
-                max(maxPosition.x, projectedPoint.x),
-                max(maxPosition.y, projectedPoint.y),
-                max(maxPosition.z, projectedPoint.z)
+                max(maxPosition.x, controlPoint.x),
+                max(maxPosition.y, controlPoint.y),
+                max(maxPosition.z, controlPoint.z)
             );
         }
     }
-    traceablePatches[index].boundingBox.minPosition = float4(minPosition, 1) - float4(0.1, 0.1, 0.1, 0);
-    traceablePatches[index].boundingBox.maxPosition = float4(maxPosition, 1) + float4(0.1, 0.1, 0.1, 0);
+    traceablePatches[index].boundingBox.minPosition = float4(minPosition, 1) /*- float4(0.1, 0.1, 0.1, 0)*/;
+    traceablePatches[index].boundingBox.maxPosition = float4(maxPosition, 1) /*+ float4(0.1, 0.1, 0.1, 0)*/;
 }
 

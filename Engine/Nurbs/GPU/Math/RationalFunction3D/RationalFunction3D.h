@@ -38,6 +38,8 @@ namespace Engine
                 out float3 R_u, out float3 R_v
                 )
             {
+                R_u = float3(0, 0, 0);
+                R_v = float3(0, 0, 0);
                 if (!isRational)
                 {
                     R_u = P_u.Evaluate(u, v);
