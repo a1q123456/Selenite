@@ -13,6 +13,9 @@ namespace Engine::Nurbs
         RationalFunction nurbsFunction;
         RationalFunction partialDerivativeU;
         RationalFunction partialDerivativeV;
+
+        DirectX::XMUINT2 uvIndex;
+        DirectX::XMFLOAT2 unused;
     };
 
     export struct SurfacePatchIndex

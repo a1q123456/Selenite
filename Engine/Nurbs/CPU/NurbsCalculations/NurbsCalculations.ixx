@@ -146,6 +146,17 @@ namespace Engine::Nurbs
         return result;
     }
 
+    template<size_t N>
+    void NormaliseKnotVector(KnotVector U, int k, int p, std::array<float, N>& outputU)
+    {
+        float currentU = U[k];
+
+        std::transform(U.begin() + k - p + 1, U.begin() + k + p + 1, outputU.begin(), [currentU](float knot)
+        {
+            return knot - currentU;
+        });
+    }
+
     export template <template<typename> typename TAllocator = std::allocator>
     auto GetNurbsSurfaceFunctions(
             KnotVector U,
@@ -159,6 +170,8 @@ namespace Engine::Nurbs
     
     {
         constexpr int degree = 3;
+        std::array<float, degree * 2> normalisedKnotVectorU{};
+        std::array<float, degree * 2> normalisedKnotVectorV{};
         using SurfaceBasisFunctionsAllocator = typename std::allocator_traits<TAllocator<int>>::template rebind_alloc<SurfaceBasisFunctions>;
         using SurfaceBasisFunctionsDerivativesAllocator = typename std::allocator_traits<TAllocator<int>>::template rebind_alloc<SurfaceBasisFunctionsDerivatives>;
         using SurfacePatchIndexAllocator = typename std::allocator_traits<TAllocator<int>>::template rebind_alloc<SurfacePatchIndex>;
@@ -174,10 +187,12 @@ namespace Engine::Nurbs
         {
             auto v = GetNextKnot(V);
             auto nextV = GetNextKnot(V, v);
-            auto Nu = GetBasisFunctions(u, U);
+            NormaliseKnotVector(U, u, degree, normalisedKnotVectorU);
+            auto Nu = GetBasisFunctions(2, normalisedKnotVectorU);
             while (nextV != -1)
             {
-                auto Nv = GetBasisFunctions(v, V);
+                NormaliseKnotVector(V, v, degree, normalisedKnotVectorV);
+                auto Nv = GetBasisFunctions(2, normalisedKnotVectorV);
 
                 SurfaceBasisFunctions patchBasisFunctions{};
                 SurfaceBasisFunctionsDerivatives patchDerivatives{};
@@ -207,8 +222,8 @@ namespace Engine::Nurbs
                     }
                 }
 
-                DirectX::XMFLOAT2 minUV{ U[u], V[v] };
-                DirectX::XMFLOAT2 maxUV{ U[nextU], V[nextV] };
+                DirectX::XMFLOAT2 minUV{ normalisedKnotVectorU[2], normalisedKnotVectorV[2] };
+                DirectX::XMFLOAT2 maxUV{ normalisedKnotVectorU[3], normalisedKnotVectorV[3] };
                 DirectX::XMUINT2 index{ static_cast<std::uint32_t>(u), static_cast<std::uint32_t>(v) };
                 SurfacePatchIndex patchIndex{ index, minUV, maxUV};
 

@@ -53,7 +53,7 @@ void main(uint3 tid : SV_DispatchThreadID)
                 }
                 minDistance = distance;
                 // TODO coloring, texturing, etc.
-                finalColour = float4(uv / 5.0f, 1, 1);
+                finalColour = float4((uv + traceablePatches[i].nurbsPatch.uvIndex) / 10.0f, 1, 1);
             }
         }
     }

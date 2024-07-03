@@ -24,7 +24,7 @@ namespace Engine
 
             float2 GetInitialGuess(float3 aabbIntersection)
             {
-                return lerp(uv[0], uv[3], 0.5);
+                return float2(0.5, 0.5);
                 float3 p = plane.Project(aabbIntersection);
 
                 float3 a = (float3)positions[0];
@@ -36,7 +36,7 @@ namespace Engine
                 float x = dot(pa, normalize(b - a));
                 float y = dot(pa, normalize(c - a));
 
-                //return coordinates;
+                return float2(x, y);
                 return float2(lerp(uv[0].x, uv[1].x, x), lerp(uv[0].y, uv[2].y, y));
             }
         };

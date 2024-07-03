@@ -3,6 +3,7 @@ module;
 #include <DirectXMath.h>
 module NurbsViewer.MyRenderable;
 import Engine.Nurbs.SurfacePatch;
+import Engine.Nurbs.QuadApproximation;
 import Engine.Graphics.Device.Utils;
 import std;
 
@@ -174,7 +175,7 @@ namespace NurbsViewer
             D3D12_RESOURCE_FLAG_NONE,
             D3D12_RESOURCE_STATE_COPY_SOURCE | D3D12_RESOURCE_STATE_GENERIC_READ);
 
-        m_traceablePatches.resize(m_basisFunctions.size());
+        //m_traceablePatches.resize(m_basisFunctions.size());
 
         m_surfacePatchesResource = AllocateStructuredBuffer(
             m_traceablePatches,
@@ -246,7 +247,7 @@ namespace NurbsViewer
         m_iprojectionMatrix = XMMatrixInverse(nullptr, projectionMatrix);
 
 
-        m_nurbsTracingConfiguration.errorThreshold = 1e-5;
+        m_nurbsTracingConfiguration.errorThreshold = 1e-6f;
         m_nurbsTracingConfiguration.maxIteration = 10;
         m_nurbsTracingConfiguration.seed = 3541;
         m_nurbsTracingConfiguration.patchesCount = m_rationaliserData.patchesCount;
@@ -513,6 +514,23 @@ namespace NurbsViewer
             m_V,
             Engine::Core::Memory::FastLocalAllocator<int>{&m_resourceHeap}
         );
+
+        auto surfacePatches = Engine::Nurbs::GetNurbsSurfacePatches<Memory::FastLocalAllocator>(
+            std::mdspan(m_controlPoints.data(), 8, 8),
+            m_U,
+            m_V,
+            &m_resourceHeap);
+
+        m_traceablePatches.reserve(surfacePatches.size());
+
+        for (int i = 0; i < surfacePatches.size(); i++)
+        {
+            auto& patch = surfacePatches[i];
+            QuadApproximation approximation{};
+            approximation.uv[0] = m_indices[i].minUV;
+            approximation.uv[3] = m_indices[i].maxUV;
+            m_traceablePatches.emplace_back(TraceableSurface{ patch, {}, approximation });
+        }
 
         m_rationaliserData.patchesCount = static_cast<UINT>(m_basisFunctions.size());
     }

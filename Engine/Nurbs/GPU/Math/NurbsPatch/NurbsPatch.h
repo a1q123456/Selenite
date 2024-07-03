@@ -11,6 +11,9 @@ namespace Engine
             RationalFunction3D partialDerivativeU;
             RationalFunction3D partialDerivativeV;
 
+            uint2 uvIndex;
+            float2 unused;
+
             void Initialise()
             {
                 nurbsFunction.Initialise();

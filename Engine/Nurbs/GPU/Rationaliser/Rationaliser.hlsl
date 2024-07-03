@@ -99,6 +99,7 @@ void main(uint3 tid : SV_DispatchThreadID)
         }
     }
 
+    traceablePatches[index].nurbsPatch.uvIndex = uvIndex;
     traceablePatches[index].nurbsPatch.nurbsFunction.isRational = isRational;
     traceablePatches[index].nurbsPatch.partialDerivativeU.isRational = isRational;
     traceablePatches[index].nurbsPatch.partialDerivativeV.isRational = isRational;
