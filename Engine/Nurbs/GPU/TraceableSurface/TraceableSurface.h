@@ -140,7 +140,9 @@ namespace Engine
                     //}
                     error = newError;
 
-                    if (error <= errorTolerance)
+                    if (error <= errorTolerance && 
+                        all(currentGuess <= surface.approximation.uv[3]) && 
+                        all(currentGuess >= surface.approximation.uv[0]))
                     {
                         break;
                     }
